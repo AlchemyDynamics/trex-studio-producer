@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trex Studio Producer</title>
+<meta name="description" content="Trex Studio Producer — a free browser music studio. Make beats, play instruments, record, mix, and build full songs.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦖</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============ Boot splash (also unlocks the AudioContext) ============ -->
+<div id="splash">
+  <div class="dino">🦖</div>
+  <div class="logo"><span class="tx">TREX</span> STUDIO</div>
+  <div class="tag">Producer Edition</div>
+  <button class="enter" id="splash-enter">▶ &nbsp;Enter the Studio</button>
+</div>
+
+<div id="app">
+
+  <!-- ============ Toolbar / Transport ============ -->
+  <div id="toolbar">
+    <div class="brand">🦖 <span>TREX</span> STUDIO</div>
+
+    <div class="tb-group" data-hint="Transport|Play, pause, stop and rewind your music. Shortcut: Space bar plays and pauses.">
+      <button class="tb-btn play" id="btn-play" data-hint="Play|Starts playback of the current pattern or song. Shortcut: Space.">▶</button>
+      <button class="tb-btn" id="btn-pause" data-hint="Pause|Pauses playback right where it is — press Play to continue from the same spot.">⏸</button>
+      <button class="tb-btn" id="btn-stop" data-hint="Stop|Stops playback and returns the playhead to the beginning.">⏹</button>
+      <button class="tb-btn" id="btn-rewind" data-hint="Rewind|Jumps back to the start. If playing, playback restarts from the top.">⏮</button>
+      <button class="tb-btn rec" id="btn-record" data-hint="Record|Arms recording. Open the Record view to capture your mic or audio interface.">⏺</button>
+    </div>
+
+    <div class="tb-group">
+      <div class="tb-toggle2" data-hint="Pattern / Song mode|PAT loops just the selected pattern (great for building beats). SONG plays your full arrangement from the Playlist.">
+        <button id="mode-pat" class="active">PAT</button>
+        <button id="mode-song">SONG</button>
+      </div>
+      <div id="position" data-hint="Position|Shows the current bar : beat : step. In Song mode, click anywhere in the Playlist timeline to scrub.">1:1:1</div>
+    </div>
+
+    <div class="tb-group">
+      <div class="numbox" id="bpm-box" data-hint="Tempo (BPM)|Beats per minute — the speed of your song. Drag up or down to change. 130 is a great starting point for house; try 140 for trap (feels like 70), 174 for drum &amp; bass.">
+        <div class="val" id="bpm-val">130</div>
+        <div class="lbl">BPM</div>
+      </div>
+      <div class="numbox" id="swing-box" data-hint="Swing|Pushes every other 16th note late for a human, bouncy groove. 0% is robotic, 30–60% gets funky.">
+        <div class="val" id="swing-val">0%</div>
+        <div class="lbl">Swing</div>
+      </div>
+      <button class="tb-btn" id="btn-metro" data-hint="Metronome|Click track so you can stay on beat while recording or practicing.">🕒</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="tb-group" data-hint="Master output|The final volume of everything, with a meter so you can see your levels.">
+      <div class="numbox" id="master-box" data-hint="Master volume|Overall output loudness. If the meter hits the red, bring this down a touch.">
+        <div class="val" id="master-val">80</div>
+        <div class="lbl">Master</div>
+      </div>
+      <div id="master-meter"><div class="fill" id="master-fill"></div></div>
+    </div>
+
+    <button class="tb-wide" id="btn-save" data-hint="Save project|Saves your song in this browser, and can download it as a .trex file you can share or back up.">💾 Save</button>
+    <button class="tb-wide" id="btn-open" data-hint="Open project|Load a saved project, a .trex file, or one of the built-in demo songs.">📂 Open</button>
+    <button class="tb-wide" id="btn-export" data-hint="Export WAV|Renders your whole song to a high-quality .wav audio file you can share anywhere.">⬇ WAV</button>
+    <button class="tb-wide" id="btn-help" data-hint="Help mode|Toggles rich pop-up explanations. When ON, hover anything to learn exactly what it does.">❓ Help</button>
+    <button class="tb-wide ai" id="btn-ai" data-hint="AI Assist|Opens the AI co-producer. Ask it to make beats, add instruments, change the mix — it edits your project for you.">✨ AI</button>
+  </div>
+
+  <!-- ============ Body ============ -->
+  <div id="body">
+    <div id="browser" data-hint="Browser|Your sound library. Click + on any instrument to add it as a new channel in the Channel Rack.">
+      <h3>Drums</h3>
+      <div id="browser-drums"></div>
+      <h3>Instruments</h3>
+      <div id="browser-melodic"></div>
+      <h3>Vintage Drum Kits <span style="font-size:9px">(online)</span></h3>
+      <div id="browser-kits"></div>
+      <h3>Demo Songs</h3>
+      <div id="browser-demos"></div>
+    </div>
+
+    <div id="views">
+      <div id="view-tabs">
+        <button class="view-tab active" data-view="rack" data-hint="Channel Rack|Where beats are born: each row is an instrument, each square is a 16th note. Shortcut: F6.">Channel Rack<span class="key">F6</span></button>
+        <button class="view-tab" data-view="piano" data-hint="Piano Roll|Draw melodies and chords on a piano grid. Click to add notes, drag edges to stretch them. Shortcut: F7.">Piano Roll<span class="key">F7</span></button>
+        <button class="view-tab" data-view="playlist" data-hint="Playlist|Arrange your patterns and recordings into a full song on a timeline. Shortcut: F5.">Playlist<span class="key">F5</span></button>
+        <button class="view-tab" data-view="mixer" data-hint="Mixer|Professional mixing board: faders, pan, mute/solo, and effect racks for every channel. Shortcut: F9.">Mixer<span class="key">F9</span></button>
+        <button class="view-tab" data-view="record" data-hint="Record|Capture audio from your microphone or audio interface, then drop the takes into your song. Shortcut: F8.">Record<span class="key">F8</span></button>
+      </div>
+
+      <div id="view-host">
+        <!-- Channel Rack -->
+        <div class="view active" id="view-rack">
+          <div class="rack-header">
+            <div class="pattern-select">
+              <span style="color:var(--text-dim);font-size:11px">PATTERN</span>
+              <select id="pattern-select" data-hint="Pattern selector|Songs are built from patterns (loops). Switch between them here — each holds its own beat and melodies."></select>
+              <button class="mini-btn" id="pattern-add" data-hint="New pattern|Creates a fresh empty pattern. Build variations: intro beat, main beat, drop...">＋ New</button>
+              <button class="mini-btn" id="pattern-clone" data-hint="Clone pattern|Copies the current pattern so you can make a variation without losing the original.">⧉ Clone</button>
+              <select id="pattern-len" data-hint="Pattern length|How many 16th-note steps this pattern has. 16 = 1 bar, 32 = 2 bars, 64 = 4 bars.">
+                <option value="16">16 steps</option>
+                <option value="32">32 steps</option>
+                <option value="64">64 steps</option>
+              </select>
+            </div>
+          </div>
+          <div id="rack-rows"></div>
+          <button class="mini-btn" id="rack-add-channel" style="margin-top:8px" data-hint="Add channel|Adds a new instrument row. You can also click + on anything in the Browser on the left.">＋ Add instrument…</button>
+        </div>
+
+        <!-- Piano Roll -->
+        <div class="view" id="view-piano">
+          <div class="piano-toolbar">
+            <span style="color:var(--text-dim);font-size:11px">CHANNEL</span>
+            <select id="piano-channel" data-hint="Piano Roll channel|Choose which instrument you're writing notes for."></select>
+            <select id="piano-snap" data-hint="Snap|Notes snap to this grid size when you draw them. Smaller = finer control.">
+              <option value="4">Snap: 1/4</option>
+              <option value="2">Snap: 1/8</option>
+              <option value="1" selected>Snap: 1/16</option>
+            </select>
+            <select id="piano-notelen" data-hint="Draw length|The length of new notes you draw, in steps.">
+              <option value="1">Draw: 1/16</option>
+              <option value="2">Draw: 1/8</option>
+              <option value="4" selected>Draw: 1/4</option>
+              <option value="8">Draw: 1/2</option>
+              <option value="16">Draw: 1 bar</option>
+            </select>
+            <button class="mini-btn" id="piano-clear" data-hint="Clear notes|Removes every note for this channel in this pattern.">Clear</button>
+            <span style="color:var(--text-dim);font-size:11px;margin-left:auto">Tip: click to add · drag to move · right-click to delete · drag right edge to stretch · Z/X octave, A–K plays keys</span>
+          </div>
+          <div id="piano-scroll"><canvas id="piano-canvas"></canvas></div>
+        </div>
+
+        <!-- Playlist -->
+        <div class="view" id="view-playlist">
+          <div class="playlist-toolbar">
+            <span style="color:var(--text-dim);font-size:11px">PAINT WITH</span>
+            <select id="playlist-pattern" data-hint="Paint pattern|Choose which pattern to paint onto the timeline, then click an empty cell to place it."></select>
+            <button class="mini-btn" id="playlist-clear" data-hint="Clear playlist|Removes all clips from the arrangement (patterns themselves are kept).">Clear</button>
+            <span style="color:var(--text-dim);font-size:11px;margin-left:auto">Click empty = place · click clip = remove · click ruler = scrub · drag ruler = fine scrub</span>
+          </div>
+          <div id="playlist-scroll"><canvas id="playlist-canvas"></canvas></div>
+        </div>
+
+        <!-- Mixer -->
+        <div class="view" id="view-mixer">
+          <div id="mixer-strips"></div>
+          <div id="fx-panel">
+            <h3 id="fx-title">Master — Effects</h3>
+            <div id="fx-slots"></div>
+            <div class="fx-add" id="fx-add"></div>
+          </div>
+        </div>
+
+        <!-- Recorder -->
+        <div class="view" id="view-record">
+          <div class="rec-panel">
+            <h2 style="color:var(--accent);font-size:16px;margin-bottom:12px">🎙 Audio Recording</h2>
+            <div class="rec-row">
+              <button class="big-rec" id="rec-btn" data-hint="Record button|Starts/stops recording from the selected input. The take appears below when you stop.">⏺</button>
+              <div style="flex:1">
+                <div class="rec-row" style="margin-bottom:6px">
+                  <span style="color:var(--text-dim);font-size:11px">INPUT</span>
+                  <select id="rec-device" style="flex:1" data-hint="Input device|Every microphone and audio-interface input your computer can see. Plug in a USB interface and it appears here."></select>
+                  <button class="mini-btn" id="rec-refresh" data-hint="Refresh devices|Rescans for newly plugged-in mics and interfaces.">↻</button>
+                </div>
+                <div class="rec-row" style="margin-bottom:0">
+                  <label style="font-size:11px;color:var(--text-dim)" data-hint="Monitor|Hear your input live through the studio (use headphones to avoid feedback!).">
+                    <input type="checkbox" id="rec-monitor-on"> Monitor input
+                  </label>
+                  <label style="font-size:11px;color:var(--text-dim)" data-hint="Play while recording|Plays your song while you record, so you can perform along with the beat.">
+                    <input type="checkbox" id="rec-play-along" checked> Play song while recording
+                  </label>
+                </div>
+              </div>
+            </div>
+            <canvas id="rec-monitor" data-hint="Input meter|Live waveform of your input. If it looks like a solid block, you're too loud — back off the gain."></canvas>
+            <div class="takes-list" id="takes-list"></div>
+            <p style="color:var(--text-dim);font-size:11px;margin-top:10px">
+              Recorded takes can be sent to the Playlist as audio clips, downloaded as WAV, or deleted.
+              Recording needs mic permission and works over HTTPS.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Hint bar ============ -->
+  <div id="hintbar"><span class="hint-icon">ⓘ</span><span id="hint-text">Hover anything to learn what it does. Toggle ❓ Help for full explanations, or press F1 for the guide.</span></div>
+</div>
+
+<!-- Help rich tooltip -->
+<div id="help-tip"><div class="tip-title" id="tip-title"></div><div id="tip-body"></div></div>
+
+<!-- ============ AI panel ============ -->
+<div id="ai-panel">
+  <div class="ai-head">
+    <span>✨</span><span class="t">AI Co-Producer</span>
+    <button class="icon-btn" id="ai-close">✕</button>
+  </div>
+  <div id="ai-log"></div>
+  <div id="ai-input-row">
+    <textarea id="ai-input" placeholder="Try: 'make a trap beat at 140 bpm' or 'add a piano melody in C minor' or 'put reverb on the snare'…"></textarea>
+    <button id="ai-send">➤</button>
+  </div>
+  <div class="ai-key-row">
+    <span style="font-size:10px;color:var(--text-dim)">API key</span>
+    <input type="password" id="ai-key" placeholder="sk-ant-… (stored only in this browser)">
+  </div>
+</div>
+
+<!-- ============ Guide modal ============ -->
+<div class="modal-back" id="guide-back">
+  <div class="modal" id="guide-modal">
+    <button class="mini-btn close-x" id="guide-close">✕ Close</button>
+    <h2>🦖 Welcome to Trex Studio Producer</h2>
+    <p>Your complete music studio in a browser. Here's the 60-second tour:</p>
+    <h3>1. Make a beat — Channel Rack (F6)</h3>
+    <ul>
+      <li>Each row is an instrument. Each square is a 16th note — click squares to turn them on.</li>
+      <li>Press <kbd>Space</kbd> to hear it loop. Classic starter: kick on steps 1, 5, 9, 13; clap on 5 and 13; hats on every odd step.</li>
+      <li>Knobs: left = volume, right = pan. Drag up/down. The green light mutes a channel.</li>
+    </ul>
+    <h3>2. Write a melody — Piano Roll (F7)</h3>
+    <ul>
+      <li>Pick a melodic channel (piano, bass, lead…), then click the grid to place notes. Right-click deletes; drag a note's right edge to stretch it.</li>
+      <li>Play the highlighted rows with your computer keyboard: <kbd>A</kbd>–<kbd>K</kbd> are white keys, <kbd>W E T Y U</kbd> are black keys, <kbd>Z</kbd>/<kbd>X</kbd> change octave.</li>
+    </ul>
+    <h3>3. Build the song — Playlist (F5)</h3>
+    <ul>
+      <li>Switch the transport to <b>SONG</b> mode. Paint your patterns onto the timeline tracks to arrange intro → verse → drop.</li>
+      <li>Click the ruler to jump anywhere (scrubbing); drag for fine control.</li>
+    </ul>
+    <h3>4. Mix it — Mixer (F9)</h3>
+    <ul>
+      <li>Every channel routes to a mixer insert. Drag faders, pan, mute/solo, and stack up to 8 effects per insert: EQ, delay, reverb, distortion, filter, compressor, chorus.</li>
+    </ul>
+    <h3>5. Record — Record (F8)</h3>
+    <ul>
+      <li>Pick your mic or audio interface, hit the big red button, perform, stop, then send the take to the Playlist.</li>
+    </ul>
+    <h3>Shortcuts</h3>
+    <ul>
+      <li><kbd>Space</kbd> play/pause · <kbd>Ctrl+Z</kbd> undo · <kbd>Ctrl+S</kbd> save · <kbd>F1</kbd> this guide</li>
+      <li><kbd>F5</kbd> Playlist · <kbd>F6</kbd> Channel Rack · <kbd>F7</kbd> Piano Roll · <kbd>F8</kbd> Record · <kbd>F9</kbd> Mixer</li>
+    </ul>
+    <p style="margin-top:10px">Stuck? Toggle <b>❓ Help</b> and hover anything — or open <b>✨ AI</b> and just ask for what you want.</p>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="js/audio-engine.js"></script>
+<script src="js/instruments.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/state.js"></script>
+<script src="js/mixer.js"></script>
+<script src="js/sampler.js"></script>
+<script src="js/sequencer.js"></script>
+<script src="js/ui-rack.js"></script>
+<script src="js/ui-pianoroll.js"></script>
+<script src="js/ui-playlist.js"></script>
+<script src="js/ui-mixer.js"></script>
+<script src="js/recorder.js"></script>
+<script src="js/hints.js"></script>
+<script src="js/export.js"></script>
+<script src="js/demos.js"></script>
+<script src="js/ai-assist.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
