@@ -239,7 +239,7 @@ const App = (() => {
     State.project.name = State.project.name === 'Untitled'
       ? (prompt('Project name:', 'My Song') || 'My Song') : State.project.name;
     State.saveLocal('manual');
-    const blob = new Blob([State.serialize()], { type: 'application/json' });
+    const blob = new Blob([State.serialize(true)], { type: 'application/json' });
     download(blob, State.project.name.replace(/[^a-z0-9-_ ]/gi, '') + '.trex');
     toast('✔ Saved in browser + downloaded .trex file');
   }
@@ -252,7 +252,7 @@ const App = (() => {
     }
     const savedName = State.project.name;
     State.saveLocal('manual');
-    download(new Blob([State.serialize()], { type: 'application/json' }),
+    download(new Blob([State.serialize(true)], { type: 'application/json' }),
       savedName.replace(/[^a-z0-9-_ ]/gi, '') + '.trex');
     // fresh start
     Engine.stop();

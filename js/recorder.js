@@ -15,6 +15,7 @@ const Recorder = (() => {
   let recording = false;
   let takes = [];   // { name, buffer, sampleId }
   let takeCount = 0;
+  let pendingChannel = null; // rack row created the moment recording starts
 
   const constraintsFor = (deviceId) => ({
     audio: {
@@ -85,6 +86,12 @@ const Recorder = (() => {
     mediaRecorder.onstop = finalizeTake;
     mediaRecorder.start();
     recording = true;
+    // an audio-input track appears in the Channel Rack right away
+    State.snapshot();
+    pendingChannel = State.newChannel('usr:pending', (State.project.channels.length % 8) + 1);
+    pendingChannel.name = '🎙 Recording…';
+    State.project.channels.push(pendingChannel);
+    UIRack.render();
     document.getElementById('rec-btn').classList.add('recording');
     document.getElementById('btn-record').classList.add('active');
     if (document.getElementById('rec-play-along').checked && !Engine.transport.playing) {
@@ -110,10 +117,34 @@ const Recorder = (() => {
       const name = 'Take ' + takeCount;
       const sampleId = Sampler.addUserSample(name, buffer);
       takes.push({ name, buffer, sampleId });
+
+      // populate the rack channel with the recording
+      let ch = pendingChannel && State.project.channels.includes(pendingChannel) ? pendingChannel : null;
+      if (!ch) {
+        ch = State.newChannel(sampleId, (State.project.channels.length % 8) + 1);
+        State.project.channels.push(ch);
+      }
+      ch.instrumentId = sampleId;
+      ch.name = '🎙 ' + name;
+      pendingChannel = null;
+      // arm step 1 so pressing play triggers the take with the beat
+      const steps = State.stepsFor(State.activePattern(), ch.id);
+      if (!steps.some(s => s.on)) steps[0] = { on: true, vel: 1 };
+      UIRack.render();
+
       renderTakes();
-      App.toast('✔ ' + name + ' recorded (' + buffer.duration.toFixed(1) + 's)');
+      App.toast('✔ ' + name + ' (' + buffer.duration.toFixed(1) + 's) added to the Channel Rack');
     } catch (err) {
+      removePendingChannel();
       App.toast('Could not decode recording: ' + err.message);
+    }
+  }
+
+  function removePendingChannel() {
+    if (pendingChannel) {
+      State.project.channels = State.project.channels.filter(c => c !== pendingChannel);
+      pendingChannel = null;
+      UIRack.render();
     }
   }
 

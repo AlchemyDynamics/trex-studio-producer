@@ -127,10 +127,61 @@ const State = (() => {
   }
 
   // ---------- persistence ----------
-  function serialize() { return JSON.stringify(project); }
+  // Recorded/imported audio is embedded in downloaded .trex files as
+  // base64 16-bit PCM (skipped for localStorage, which has tight quotas).
+  function encodeSamples() {
+    const out = {};
+    for (const [id, buf] of Object.entries(samples)) {
+      const chans = [];
+      for (let c = 0; c < buf.numberOfChannels; c++) {
+        const f = buf.getChannelData(c);
+        const i16 = new Int16Array(f.length);
+        for (let i = 0; i < f.length; i++) {
+          const s = Math.max(-1, Math.min(1, f[i]));
+          i16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        const bytes = new Uint8Array(i16.buffer);
+        let bin = '';
+        for (let i = 0; i < bytes.length; i += 0x8000) {
+          bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+        }
+        chans.push(btoa(bin));
+      }
+      out[id] = { rate: buf.sampleRate, length: buf.length, channels: chans };
+    }
+    return out;
+  }
+
+  function restoreSamples(data, ctx) {
+    for (const [id, s] of Object.entries(data || {})) {
+      try {
+        const buf = ctx.createBuffer(s.channels.length, s.length, s.rate);
+        s.channels.forEach((b64, c) => {
+          const bin = atob(b64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          const i16 = new Int16Array(bytes.buffer);
+          const f = buf.getChannelData(c);
+          for (let i = 0; i < i16.length; i++) f[i] = i16[i] / 0x8000;
+        });
+        samples[id] = buf;
+        if (typeof Sampler !== 'undefined') Sampler.restore(id, buf);
+      } catch (e) { /* one bad sample shouldn't kill the whole load */ }
+    }
+  }
+
+  function serialize(includeSamples = false) {
+    if (!includeSamples || !Object.keys(samples).length) return JSON.stringify(project);
+    return JSON.stringify({ ...project, samplesData: encodeSamples() });
+  }
+
   function load(json) {
     const p = (typeof json === 'string') ? JSON.parse(json) : json;
     if (!p || !p.patterns) throw new Error('Not a Trex Studio project');
+    if (p.samplesData) {
+      restoreSamples(p.samplesData, Engine.ensureContext());
+      delete p.samplesData;
+    }
     project = p;
   }
   function saveLocal(slot = 'autosave') {

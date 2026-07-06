@@ -108,6 +108,17 @@ const Sampler = (() => {
     return id;
   }
 
+  // re-register a sample restored from a saved .trex file
+  function restore(id, buffer) {
+    const n = parseInt(id.split(':')[1], 10);
+    if (!isNaN(n) && n > userCount) userCount = n;
+    loaded[id] = {
+      id, buffer, type: 'drum', color: '#ff4d5e',
+      name: (id.split(':')[2] || 'Sample').replace(/_/g, ' '),
+      desc: 'Your own recorded or imported sample.',
+    };
+  }
+
   // ---- playback ----
   function play(soundId, dest, { time, velocity = 1, rate = 1 }) {
     const s = loaded[soundId] || (State.samples[soundId] && { buffer: State.samples[soundId] });
@@ -126,5 +137,5 @@ const Sampler = (() => {
   function get(soundId) { return loaded[soundId]; }
   function has(soundId) { return !!loaded[soundId]; }
 
-  return { KITS, loadKit, addUserSample, play, get, has, loaded };
+  return { KITS, loadKit, addUserSample, restore, play, get, has, loaded };
 })();

@@ -69,8 +69,10 @@ Mixing = making everything fit together. The mixer opens in its **own floating w
 
 1. Plug in your mic or USB audio interface, open the **Record** view, hit **↻** to scan inputs and pick one.
 2. Check **Play song while recording** to perform along with the beat. Use headphones if you enable **Monitor** (avoids feedback).
-3. Hit the big **⏺**, perform, hit it again to stop.
-4. Your take appears with a waveform: click it to audition, **→ Playlist** drops it into your song as an audio clip, **⬇ WAV** saves it as a file.
+3. Hit the big **⏺** — a **🎙 audio track appears in the Channel Rack immediately**. Perform, then hit ⏺ again to stop.
+4. Your recording lands on that rack channel with step 1 armed, so pressing play triggers it with your beat. Move the step to change where it fires, or open it in the Piano Roll to pitch it up/down like a sampler.
+5. The take also appears below with a waveform: click to audition, **→ Playlist** places it on the song timeline instead, **⬇ WAV** saves it as a file.
+6. Recordings are embedded in your downloaded `.trex` project files, so a saved song reopens with its vocals intact.
 
 ## 7. Saving and exporting
 

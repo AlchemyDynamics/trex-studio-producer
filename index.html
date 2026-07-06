@@ -29,7 +29,7 @@
       <button class="tb-btn" id="btn-pause" data-hint="Pause|Pauses playback right where it is — press Play to continue from the same spot.">⏸</button>
       <button class="tb-btn" id="btn-stop" data-hint="Stop|Stops playback and returns the playhead to the beginning.">⏹</button>
       <button class="tb-btn" id="btn-rewind" data-hint="Rewind|Jumps back to the start. If playing, playback restarts from the top.">⏮</button>
-      <button class="tb-btn rec" id="btn-record" data-hint="Record|Arms recording. Open the Record view to capture your mic or audio interface.">⏺</button>
+      <button class="tb-btn rec" id="btn-record" data-hint="Record|Starts recording from your mic or audio interface. A new 🎙 audio track appears in the Channel Rack, and your take lands there when you stop.">⏺</button>
     </div>
 
     <div class="tb-group">
@@ -150,7 +150,7 @@
           <div class="rec-panel">
             <h2 style="color:var(--accent);font-size:16px;margin-bottom:12px">🎙 Audio Recording</h2>
             <div class="rec-row">
-              <button class="big-rec" id="rec-btn" data-hint="Record button|Starts/stops recording from the selected input. The take appears below when you stop.">⏺</button>
+              <button class="big-rec" id="rec-btn" data-hint="Record button|Starts/stops recording from the selected input. A 🎙 audio track is added to the Channel Rack and your take lands there when you stop (it also appears below).">⏺</button>
               <div style="flex:1">
                 <div class="rec-row" style="margin-bottom:6px">
                   <span style="color:var(--text-dim);font-size:11px">INPUT</span>
@@ -170,8 +170,9 @@
             <canvas id="rec-monitor" data-hint="Input meter|Live waveform of your input. If it looks like a solid block, you're too loud — back off the gain."></canvas>
             <div class="takes-list" id="takes-list"></div>
             <p style="color:var(--text-dim);font-size:11px;margin-top:10px">
-              Recorded takes can be sent to the Playlist as audio clips, downloaded as WAV, or deleted.
-              Recording needs mic permission and works over HTTPS.
+              Every recording becomes a 🎙 channel in the Channel Rack — trigger it with steps or pitch it in the Piano Roll.
+              Takes can also be sent to the Playlist as audio clips, downloaded as WAV, or deleted.
+              Recordings are saved inside your downloaded .trex project files. Recording needs mic permission and works over HTTPS.
             </p>
           </div>
         </div>
