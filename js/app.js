@@ -8,10 +8,11 @@
 const App = (() => {
 
   // ---------- shared knob widget (vertical drag, FL-style) ----------
-  function makeKnob({ value, min = 0, max = 1, onChange, hint, format, small }) {
+  function makeKnob({ value, min = 0, max = 1, onChange, hint, format, small, onContext }) {
     const el = document.createElement('div');
     el.className = 'knob' + (small ? ' small' : '');
     if (hint) el.dataset.hint = hint;
+    if (onContext) el.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); onContext(); });
     let v = value;
     const paint = () => el.style.setProperty('--knob-deg', (30 + v * 300) + 'deg');
     paint();
@@ -285,9 +286,53 @@ const App = (() => {
     }
   }
 
+  // ---------- audio import (drag-drop or picker) ----------
+  async function importAudioFiles(files) {
+    Engine.ensureContext();
+    let added = 0;
+    for (const f of files) {
+      if (!/\.(wav|mp3|ogg|webm|m4a|flac|aac)$/i.test(f.name) && !f.type.startsWith('audio/')) continue;
+      try {
+        const buffer = await Engine.ctx.decodeAudioData(await f.arrayBuffer());
+        const name = f.name.replace(/\.[^.]+$/, '');
+        const sampleId = Sampler.addUserSample(name, buffer);
+        const ch = State.newChannel(sampleId, (State.project.channels.length % 8) + 1);
+        ch.name = '📁 ' + name;
+        State.project.channels.push(ch);
+        added++;
+      } catch (err) {
+        toast('Could not read ' + f.name);
+      }
+    }
+    if (added) {
+      State.snapshot();
+      UIRack.render();
+      toast('✔ ' + added + ' sample' + (added > 1 ? 's' : '') + ' added to the Channel Rack');
+    }
+  }
+
+  function initImport() {
+    window.addEventListener('dragover', (e) => { e.preventDefault(); });
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files.length) importAudioFiles([...e.dataTransfer.files]);
+    });
+    const pick = document.getElementById('browser-import');
+    if (pick) pick.onclick = () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'audio/*,.wav,.mp3,.ogg,.flac,.m4a';
+      input.multiple = true;
+      input.onchange = () => importAudioFiles([...input.files]);
+      input.click();
+    };
+  }
+
   function refreshAll() {
     Engine.setBpm(State.project.bpm);
     Engine.setSwing(State.project.swing);
+    const loop = State.project.loop || { start: 0, end: 0 };
+    Engine.setLoop(loop.start, loop.end);
     document.getElementById('bpm-val').textContent = Math.round(State.project.bpm);
     document.getElementById('swing-val').textContent = Math.round(State.project.swing * 100) + '%';
     Mixer.build();
@@ -303,7 +348,8 @@ const App = (() => {
     switch (e.key) {
       case ' ':
         e.preventDefault();
-        if (Engine.transport.playing) Engine.pause(); else Engine.play();
+        if (Engine.transport.playing) Engine.pause();
+        else Engine.play(Engine.transport.recArm && Engine.transport.mode === 'pattern');
         syncTransportButtons();
         return;
       case 'F1': e.preventDefault(); document.getElementById('guide-back').classList.add('open'); return;
@@ -315,8 +361,12 @@ const App = (() => {
       case 'Escape':
         document.getElementById('guide-back').classList.remove('open');
         AIAssist.toggle(false);
+        UIPiano.clearSelection();
         return;
     }
+    // piano-roll editing commands (select all, copy/paste, duplicate, transpose, delete)
+    const pianoOpen = document.getElementById('view-piano').classList.contains('active');
+    if (pianoOpen && UIPiano.handleShortcut(e)) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();
       if (e.shiftKey ? State.redo() : State.undo()) { refreshAll(); toast(e.shiftKey ? 'Redo' : 'Undo'); }
@@ -384,7 +434,20 @@ const App = (() => {
     document.getElementById('splash-enter').onclick = (e) => { e.stopPropagation(); enterStudio(); };
 
     // transport
-    document.getElementById('btn-play').onclick = () => { Engine.play(); syncTransportButtons(); };
+    const playWithArm = () => {
+      // armed + pattern mode = one bar of count-in, then your playing is captured as notes
+      Engine.play(Engine.transport.recArm && Engine.transport.mode === 'pattern');
+      syncTransportButtons();
+      if (Engine.transport.countIn > 0) toast('🎙 Count-in… play on the 1! Notes land in the Piano Roll channel.');
+    };
+    document.getElementById('btn-play').onclick = playWithArm;
+    document.getElementById('btn-record').onclick = () => {
+      Engine.transport.recArm = !Engine.transport.recArm;
+      document.getElementById('btn-record').classList.toggle('active', Engine.transport.recArm);
+      toast(Engine.transport.recArm
+        ? '⏺ Note recording ARMED — press Play in pattern mode and perform (keys or A–K). Audio recording lives in the Record view (F8).'
+        : 'Note recording off');
+    };
     document.getElementById('btn-pause').onclick = () => { Engine.pause(); syncTransportButtons(); };
     document.getElementById('btn-stop').onclick = () => { Engine.stop(); };
     document.getElementById('btn-rewind').onclick = () => { Engine.rewind(); updatePosition(); };
@@ -434,6 +497,7 @@ const App = (() => {
     Exporter.init();
     AIAssist.init();
     renderBrowser();
+    initImport();
   }
 
   document.addEventListener('DOMContentLoaded', init);

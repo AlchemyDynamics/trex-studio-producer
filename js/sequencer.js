@@ -60,6 +60,7 @@ const Sequencer = (() => {
   const liveAudioSources = new Set();
 
   function scheduleSongStep(songTick, when) {
+    Automation.applyAtTick(songTick, when);
     // pattern clips
     for (const clip of State.project.playlist) {
       const clipStart = clip.start * 16;
@@ -88,6 +89,11 @@ const Sequencer = (() => {
     src.connect(g);
     g.connect(Mixer.inputFor(clip.mixerTrack || 0));
     src.start(when, Math.min(offsetSec, Math.max(0, buffer.duration - 0.01)));
+    // clip length is trimmable in the playlist — stop when the clip window ends
+    const remaining = clip.lengthSteps * Engine.secondsPerStep() - offsetSec;
+    if (remaining > 0 && remaining < buffer.duration - offsetSec) {
+      try { src.stop(when + remaining); } catch (e) {}
+    }
     liveAudioSources.add(src);
     src.onended = () => liveAudioSources.delete(src);
   }

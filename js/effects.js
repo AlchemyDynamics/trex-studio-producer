@@ -69,6 +69,7 @@ const Effects = (() => {
         io.dry.gain.value = 1; io.wet.gain.value = 0.3;
         return {
           input: io.input, output: io.output,
+          params: { time: delay.delayTime, feedback: fb.gain, mix: io.wet.gain },
           set(p, v) {
             if (p === 'time') delay.delayTime.setTargetAtTime(v, ctx.currentTime, 0.02);
             if (p === 'feedback') fb.gain.value = v;
@@ -98,6 +99,7 @@ const Effects = (() => {
         input.connect(shaper); shaper.connect(tone); tone.connect(level);
         return {
           input, output: level,
+          params: { tone: tone.frequency, level: level.gain },
           set(p, v) {
             if (p === 'drive') shaper.curve = makeDistortionCurve(v);
             if (p === 'tone') tone.frequency.value = v;
@@ -122,6 +124,7 @@ const Effects = (() => {
         f.type = 'lowpass'; f.frequency.value = 18000; f.Q.value = 1;
         return {
           input: f, output: f,
+          params: { cutoff: f.frequency, q: f.Q },
           set(p, v) {
             if (p === 'type') f.type = v;
             if (p === 'cutoff') f.frequency.setTargetAtTime(v, ctx.currentTime, 0.01);
@@ -147,6 +150,7 @@ const Effects = (() => {
         io.dry.gain.value = 1; io.wet.gain.value = 0.3;
         return {
           input: io.input, output: io.output,
+          params: { mix: io.wet.gain },
           set(p, v) {
             if (p === 'size') conv.buffer = makeImpulse(ctx, v, 2.5);
             if (p === 'mix') { io.wet.gain.value = v; io.dry.gain.value = 1 - v * 0.4; }
@@ -172,6 +176,7 @@ const Effects = (() => {
         low.connect(mid); mid.connect(high);
         return {
           input: low, output: high,
+          params: { low: low.gain, mid: mid.gain, high: high.gain },
           set(p, v) {
             if (p === 'low') low.gain.value = v;
             if (p === 'mid') mid.gain.value = v;
@@ -198,6 +203,7 @@ const Effects = (() => {
         c.threshold.value = -24; c.ratio.value = 4; c.attack.value = 0.01; c.release.value = 0.25; c.knee.value = 10;
         return {
           input: c, output: c,
+          params: { threshold: c.threshold, ratio: c.ratio, attack: c.attack, release: c.release },
           set(p, v) { if (c[p]) c[p].value = v; },
         };
       },
@@ -223,6 +229,7 @@ const Effects = (() => {
         io.wet.gain.value = 0.5;
         return {
           input: io.input, output: io.output,
+          params: { rate: lfo.frequency, depth: lfoG.gain, mix: io.wet.gain },
           set(p, v) {
             if (p === 'rate') lfo.frequency.value = v;
             if (p === 'depth') lfoG.gain.value = v;
@@ -302,5 +309,16 @@ const Effects = (() => {
     };
   }
 
-  return { defs, byId, createChain };
+  // normalized 0..1 <-> real parameter value (log-aware)
+  function norm(paramDef, v) {
+    if (paramDef.log) return Math.log(v / paramDef.min) / Math.log(paramDef.max / paramDef.min);
+    return (v - paramDef.min) / (paramDef.max - paramDef.min);
+  }
+  function denorm(paramDef, n) {
+    n = Math.max(0, Math.min(1, n));
+    if (paramDef.log) return paramDef.min * Math.pow(paramDef.max / paramDef.min, n);
+    return paramDef.min + n * (paramDef.max - paramDef.min);
+  }
+
+  return { defs, byId, createChain, norm, denorm };
 })();

@@ -31,7 +31,7 @@ const Exporter = (() => {
     mFader.gain.value = cfg[0].mute ? 0 : cfg[0].volume;
     mChain.output.connect(mFader);
     mFader.connect(masterGain);
-    strips[0] = { input: mChain.input };
+    strips[0] = { input: mChain.input, fader: mFader, chain: mChain, audible: !cfg[0].mute };
 
     const anySolo = cfg.some(t => t.solo && t.id !== 0);
     for (let i = 1; i < cfg.length; i++) {
@@ -45,9 +45,9 @@ const Exporter = (() => {
       chain.output.connect(fader);
       fader.connect(panner);
       panner.connect(strips[0].input);
-      strips[i] = { input: chain.input };
+      strips[i] = { input: chain.input, fader, panner, chain, audible };
     }
-    return strips;
+    return { strips, masterGain };
   }
 
   function playNoteOffline(octx, strips, channel, { time, key, velocity, durationSteps }) {
@@ -105,12 +105,14 @@ const Exporter = (() => {
     const rate = 44100;
     const octx = new OfflineAudioContext(2, Math.ceil(lengthSec * rate), rate);
 
-    const strips = buildOfflineMixer(octx);
+    const offline = buildOfflineMixer(octx);
+    const strips = offline.strips;
     const startPad = 0.05;
 
     for (let tick = 0; tick < totalSteps; tick++) {
       const when = startPad + tick * sp + swingOffset(tick, sp);
       if (isSong) {
+        Automation.applyOffline(offline, tick, when);
         for (const clip of State.project.playlist) {
           const cs = clip.start * 16, ce = (clip.start + clip.length) * 16;
           if (tick < cs || tick >= ce) continue;
@@ -128,6 +130,8 @@ const Exporter = (() => {
             src.connect(g);
             g.connect((strips[clip.mixerTrack || 0]).input);
             src.start(when);
+            const clipSec = clip.lengthSteps * sp;
+            if (clipSec > 0 && clipSec < buffer.duration) src.stop(when + clipSec);
           }
         }
       } else {

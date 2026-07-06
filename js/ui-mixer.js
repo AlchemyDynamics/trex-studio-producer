@@ -8,6 +8,14 @@
 const UIMixer = (() => {
   let selected = 0;
 
+  // right-click on a knob/fader → automation lane in the playlist
+  function autoLane(target) {
+    Automation.createLane(target);
+    UIPlaylist.render();
+    App.showView('playlist');
+    App.toast('⚡ Automation lane added for ' + Automation.laneName(target) + ' — draw the curve below the tracks');
+  }
+
   function render() {
     const host = document.getElementById('mixer-strips');
     host.innerHTML = '';
@@ -30,9 +38,10 @@ const UIMixer = (() => {
       if (i !== 0) {
         strip.appendChild(App.makeKnob({
           value: (t.pan + 1) / 2, min: 0, max: 1, small: true,
-          hint: `Pan — ${t.name}|Places this track left/right in the stereo field.`,
+          hint: `Pan — ${t.name}|Places this track left/right in the stereo field. Right-click to automate it over the song.`,
           onChange: v => { t.pan = v * 2 - 1; Mixer.applyTrack(i); },
           format: v => { const p = Math.round((v * 2 - 1) * 100); return p === 0 ? 'C' : (p < 0 ? -p + 'L' : p + 'R'); },
+          onContext: () => autoLane({ kind: 'mixerPan', track: i }),
         }));
       }
 
@@ -48,7 +57,11 @@ const UIMixer = (() => {
 
       const track = document.createElement('div');
       track.className = 'fader-track';
-      track.dataset.hint = `Volume fader — ${t.name}|Drag up/down to set loudness. Double-click resets to 80%.`;
+      track.dataset.hint = `Volume fader — ${t.name}|Drag up/down to set loudness. Double-click resets to 80%. Right-click to automate it over the song (fades, build-ups).`;
+      track.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        autoLane({ kind: 'mixerVol', track: i });
+      });
       const thumb = document.createElement('div');
       thumb.className = 'fader-thumb';
       track.appendChild(thumb);
@@ -164,13 +177,14 @@ const UIMixer = (() => {
           val.textContent = fmt(slot.values[p.id]);
           const knob = App.makeKnob({
             value: normFor(p, slot.values[p.id]), min: 0, max: 1,
-            hint: `${p.name} — ${def.name}|${p.hint}`,
+            hint: `${p.name} — ${def.name}|${p.hint} Right-click to automate this knob over the song.`,
             onChange: nv => {
               const v = denormFor(p, nv);
               Mixer.setFxParam(selected, idx, p.id, v);
               val.textContent = fmt(v);
             },
             format: nv => fmt(denormFor(p, nv)),
+            onContext: () => autoLane({ kind: 'fxParam', track: selected, slot: idx, param: p.id }),
           });
           wrap.appendChild(knob);
           wrap.appendChild(val);

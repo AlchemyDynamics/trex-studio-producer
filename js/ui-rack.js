@@ -9,6 +9,39 @@
 const UIRack = (() => {
   const $rows = () => document.getElementById('rack-rows');
 
+  // velocity shown as fill height on lit steps
+  function paintStep(el, step, color) {
+    el.classList.toggle('on', step.on);
+    if (step.on) {
+      const h = Math.round(step.vel * 100);
+      el.style.background = `linear-gradient(to top, ${color} ${h}%, ${color}33 ${h}%)`;
+    } else {
+      el.style.background = '';
+    }
+  }
+
+  // drag-up/down on a lit step = velocity; plain click = toggle off
+  let velDrag = null;
+  window.addEventListener('mousemove', (e) => {
+    if (!velDrag) return;
+    const dy = velDrag.startY - e.clientY;
+    if (!velDrag.moved && Math.abs(dy) < 4) return;
+    velDrag.moved = true;
+    velDrag.step.vel = Math.max(0.1, Math.min(1, velDrag.startVel + dy / 90));
+    paintStep(velDrag.el, velDrag.step, velDrag.color);
+    Hints.showValue('Step velocity: ' + Math.round(velDrag.step.vel * 100) + '%');
+  });
+  window.addEventListener('mouseup', () => {
+    if (!velDrag) return;
+    if (!velDrag.moved && velDrag.wasOn) {
+      velDrag.step.on = false;                    // plain click on lit step = remove
+      paintStep(velDrag.el, velDrag.step, velDrag.color);
+    } else if (velDrag.moved) {
+      Sequencer.preview(velDrag.channel, 60, velDrag.step.vel); // hear the accent
+    }
+    velDrag = null;
+  });
+
   function render() {
     const host = $rows();
     host.innerHTML = '';
@@ -61,19 +94,30 @@ const UIRack = (() => {
       const steps = State.stepsFor(pattern, channel.id);
       for (let i = 0; i < pattern.length; i++) {
         const s = document.createElement('div');
-        s.className = 'step' + (Math.floor(i / 4) % 2 === 0 ? ' beat1' : '') + (steps[i].on ? ' on' : '');
+        s.className = 'step' + (Math.floor(i / 4) % 2 === 0 ? ' beat1' : '');
         s.style.setProperty('--ch-color', inst.color);
         s.dataset.step = i;
-        s.dataset.hint = `Step ${i + 1}|One 16th note. Left-click to add a hit, right-click to remove. Steps ${'1, 5, 9, 13'} are the main beats.`;
+        s.dataset.hint = `Step ${i + 1}|One 16th note. Left-click adds a hit, right-click removes it. Drag up/down on a lit step to set its velocity (accent). Steps 1, 5, 9, 13 are the main beats.`;
+        paintStep(s, steps[i], inst.color);
         s.onmousedown = (e) => {
           e.preventDefault();
           State.snapshot();
-          if (e.button === 2) steps[i].on = false;
-          else {
-            steps[i].on = !steps[i].on;
-            if (steps[i].on) Sequencer.preview(channel);
+          if (e.button === 2) {
+            steps[i].on = false;
+            paintStep(s, steps[i], inst.color);
+            return;
           }
-          s.classList.toggle('on', steps[i].on);
+          const wasOn = steps[i].on;
+          if (!wasOn) {
+            steps[i].on = true;
+            Sequencer.preview(channel, 60, steps[i].vel);
+            paintStep(s, steps[i], inst.color);
+          }
+          // drag vertically = velocity; plain click on a lit step = turn off
+          velDrag = {
+            el: s, step: steps[i], color: inst.color, channel,
+            startY: e.clientY, startVel: steps[i].vel, wasOn, moved: false,
+          };
         };
         s.oncontextmenu = (e) => e.preventDefault();
         stepsEl.appendChild(s);

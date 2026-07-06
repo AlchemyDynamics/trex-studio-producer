@@ -66,6 +66,8 @@ const State = (() => {
       audioClips: [],     // [{ id, type:'audio', name, track, start(bar), lengthSteps, sampleId }]
       playlistTracks: 8,
       mixer: defaultMixer(),
+      automation: [],     // [{ id, name, target:{kind,track,slot,param}, points:[{tick,value}] }]
+      loop: { start: 0, end: 0 }, // song-mode loop region in 16th steps (0,0 = off)
     };
   }
 
@@ -182,6 +184,9 @@ const State = (() => {
       restoreSamples(p.samplesData, Engine.ensureContext());
       delete p.samplesData;
     }
+    // upgrade projects saved before these features existed
+    p.automation = p.automation || [];
+    p.loop = p.loop || { start: 0, end: 0 };
     project = p;
   }
   function saveLocal(slot = 'autosave') {

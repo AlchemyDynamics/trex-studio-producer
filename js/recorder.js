@@ -253,10 +253,6 @@ const Recorder = (() => {
 
   function init() {
     document.getElementById('rec-btn').onclick = toggleRecord;
-    document.getElementById('btn-record').onclick = () => {
-      App.showView('record');
-      toggleRecord();
-    };
     document.getElementById('rec-refresh').onclick = refreshDevices;
     document.getElementById('rec-device').onchange = (e) => {
       if (stream) openInput(e.target.value).catch(() => App.toast('Could not switch input'));

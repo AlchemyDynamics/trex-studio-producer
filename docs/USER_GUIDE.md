@@ -25,6 +25,7 @@ The **Browser** on the left lists every sound:
 - **Click** an instrument to hear it.
 - Click the **＋** to add it as a new row in the Channel Rack.
 - **Vintage Drum Kits** loads real sampled drum machines from the 1980s (TR-808, LinnDrum…) — needs internet, and totally worth it.
+- **Import audio files…** (or just drag WAV/MP3/OGG files anywhere onto the app) turns your own samples into playable channels.
 
 ## 3. Melodies and basslines — Piano Roll (F7)
 
@@ -32,7 +33,9 @@ The **Browser** on the left lists every sound:
 2. Open the **Piano Roll** and pick that channel at the top.
 3. **Click** the grid to place a note. **Drag** to move it. Drag its **right edge** to stretch it. **Right-click** deletes.
 4. Play notes live: click the **piano keys** on the left, or use your computer keyboard — **A S D F G H J K** are white keys, **W E T Y U** are the black keys, **Z / X** move octaves.
-5. The **🎹 KEYS** dropdown picks the sound the keys play — Grand Piano by default, or Electric Piano, Organ, Church Organ, Harpsichord, Clavinet, Music Box, Accordion and every other melodic instrument. Choose "↳ Follow channel" to hear the selected channel's own sound instead. (Notes you place in the grid always play their channel's instrument during playback.)
+5. **Editing power tools:** Ctrl+drag = box-select notes · drag any selected note = move them all together · **Ctrl+C / Ctrl+V** copy-paste · **Ctrl+B** duplicates the selection to the right (instant 2× melody) · **Shift+↑/↓** transpose a semitone, **Ctrl+↑/↓** an octave · **Del** removes · **Ctrl+A** selects all · Esc deselects.
+6. **Record your playing!** Hit the toolbar **⏺** to arm, then press Play (pattern mode). You get a 1-bar count-in click, then everything you play — screen keys or A–K — is written into the pattern, snapped to the grid. Loop keeps going so you can layer more each pass.
+7. The **🎹 KEYS** dropdown picks the sound the keys play — Grand Piano by default, or Electric Piano, Organ, Church Organ, Harpsichord, Clavinet, Music Box, Accordion and every other melodic instrument. Choose "↳ Follow channel" to hear the selected channel's own sound instead. (Notes you place in the grid always play their channel's instrument during playback.)
 
 **Cheat codes for sounding good:**
 - Stay "in key": start with only the white-key notes A, C, D, E, G (A minor pentatonic — everything sounds good together).
@@ -47,7 +50,8 @@ A song = patterns arranged over time.
 2. Open the **Playlist** and switch the transport to **SONG** mode.
 3. Pick a pattern in "PAINT WITH", then **click** empty timeline cells to place it. Click a clip to remove it.
 4. Classic structure: **Intro (drums only) → Build (add bass) → Drop/Chorus (everything) → Break (quiet) → Drop → Outro.**
-5. Click anywhere on the **ruler** to jump there; **drag** the ruler for fine scrubbing.
+5. **Rearrange freely:** drag a clip to move it (any track, any bar) · drag its **right edge** to resize/trim · **Shift+drag** clones it · **right-click** deletes it.
+6. **Loop a section:** drag across the ruler to set a loop region (green brace) — playback cycles it while you polish that section. Right-click the ruler to clear the loop. Click the ruler to jump anywhere.
 
 ## 5. Mixing — Mixer (F9)
 
@@ -64,6 +68,15 @@ Mixing = making everything fit together. The mixer opens in its **own floating w
   - **Compressor** = evens out loudness, adds punch.
   - **Distortion** = grit for basses and leads. **Chorus** = width and shimmer.
 - Watch the **Master meter** (top right): if it slams into the red, lower the master or your loudest tracks.
+
+## 5½. Automation — make the mix MOVE ⚡
+
+Automation is the secret sauce of electronic music: knobs that turn themselves.
+
+1. **Right-click any mixer fader or effect knob** and a purple automation lane appears under the Playlist tracks (or use **⚡ ＋ Auto** in the Playlist toolbar).
+2. Click in the lane to add points; drag them to sculpt the curve. Values glide smoothly between points. Right-click a point to remove it; ✕ on the lane header removes the lane.
+3. Classic moves: automate a **Filter cutoff** from low to high across 4 bars = build-up. Automate **Master volume** down then up = the pre-drop dip. Automate **Reverb mix** up at the end of a phrase = wash out.
+4. Automation plays in SONG mode and is baked into your WAV exports.
 
 ## 6. Recording — Record (F8)
 
@@ -106,6 +119,12 @@ It answers AND applies the edits directly to your project (you can always Ctrl+Z
 | `Z` / `X` | Octave down / up |
 | Right-click | Remove step / delete note / channel options |
 | `Ctrl` + mouse wheel | Zoom (piano roll & playlist) |
+| `Ctrl` + drag | Box-select notes (piano roll) |
+| `Ctrl+C` / `Ctrl+V` / `Ctrl+B` | Copy / paste / duplicate-right notes |
+| `Shift+↑↓` / `Ctrl+↑↓` | Transpose selection semitone / octave |
+| `⏺` then `Space` | Record your playing into the pattern (1-bar count-in) |
+| Drag on ruler | Set loop region (Playlist) |
+| Drag up/down on a lit step | Step velocity (Channel Rack) |
 | `Alt` + wheel over a note | Note velocity |
 | Double-click a knob/fader | Reset to default |
 

@@ -29,6 +29,9 @@ const Engine = (() => {
     timerId: null,
     startedAt: 0,           // ctx.currentTime when playback started
     pausedStep: null,       // resume point for pause
+    countIn: 0,             // metronome-only steps before capture starts
+    recArm: false,          // note-recording armed (pattern mode)
+    lastStep: null,         // {step, time} most recently scheduled (quantize clock)
   };
 
   const LOOKAHEAD_MS = 25;        // scheduler wake-up interval
@@ -82,8 +85,18 @@ const Engine = (() => {
   // --- Scheduler (lookahead pattern) -------------------------------------
   function schedulerTick() {
     while (transport.nextNoteTime < ctx.currentTime + SCHEDULE_AHEAD) {
+      // count-in: one bar of metronome only, nothing advances
+      if (transport.countIn > 0) {
+        if (transport.countIn % STEPS_PER_BEAT === 0) {
+          playMetronomeTick(transport.nextNoteTime, transport.countIn === STEPS_PER_BEAT * 4);
+        }
+        transport.countIn--;
+        transport.nextNoteTime += secondsPerStep();
+        continue;
+      }
       const stepIdx = (transport.mode === 'pattern') ? transport.step : transport.songTick;
       const when = transport.nextNoteTime + swingOffset(stepIdx);
+      transport.lastStep = { step: stepIdx, time: transport.nextNoteTime };
       stepQueue.push({ step: stepIdx, time: transport.nextNoteTime, mode: transport.mode });
 
       // Hand the step to the app (sequencer + playlist decide what sounds).
@@ -130,11 +143,25 @@ const Engine = (() => {
     return current; // may be null between steps
   }
 
+  // Where is the playhead RIGHT NOW, fractionally? (for quantizing live input)
+  function currentStepFloat() {
+    if (!ctx || !transport.lastStep) return 0;
+    return transport.lastStep.step + (ctx.currentTime - transport.lastStep.time) / secondsPerStep();
+  }
+
+  function setLoop(startStep, endStep) {
+    transport.loopStart = Math.max(0, startStep | 0);
+    transport.loopEnd = Math.max(0, endStep | 0);
+  }
+  function clearLoop() { transport.loopStart = 0; transport.loopEnd = 0; }
+
   // --- Transport controls ---------------------------------------------------
-  function play() {
+  function play(countIn = false) {
     ensureContext();
     if (transport.playing) return;
     transport.playing = true;
+    transport.countIn = countIn ? STEPS_PER_BEAT * 4 : 0;
+    transport.lastStep = null;
     // resume from pause point if there is one
     if (transport.pausedStep !== null) {
       if (transport.mode === 'pattern') transport.step = transport.pausedStep;
@@ -163,6 +190,8 @@ const Engine = (() => {
     transport.step = 0;
     transport.songTick = transport.loopStart;
     transport.pausedStep = null;
+    transport.countIn = 0;
+    transport.lastStep = null;
     stepQueue = [];
     emit('stop', false);
   }
@@ -232,6 +261,7 @@ const Engine = (() => {
     get master() { return masterGain; },
     get recorderTap() { return recorderTap; },
     transport, play, pause, stop, rewind, seek, setBpm, setSwing, setMode,
+    setLoop, clearLoop, currentStepFloat,
     currentUiStep, masterLevel, encodeWav, secondsPerStep,
     STEPS_PER_BEAT,
     // wired up later by app.js:

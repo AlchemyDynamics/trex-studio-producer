@@ -29,7 +29,7 @@
       <button class="tb-btn" id="btn-pause" data-hint="Pause|Pauses playback right where it is — press Play to continue from the same spot.">⏸</button>
       <button class="tb-btn" id="btn-stop" data-hint="Stop|Stops playback and returns the playhead to the beginning.">⏹</button>
       <button class="tb-btn" id="btn-rewind" data-hint="Rewind|Jumps back to the start. If playing, playback restarts from the top.">⏮</button>
-      <button class="tb-btn rec" id="btn-record" data-hint="Record|Starts recording from your mic or audio interface. A new 🎙 audio track appears in the Channel Rack, and your take lands there when you stop.">⏺</button>
+      <button class="tb-btn rec" id="btn-record" data-hint="Record notes|Arms note recording: press Play in pattern mode, get a 1-bar count-in, then everything you play (piano keys or A–K) is written into the Piano Roll, quantized to the grid. Audio (mic/interface) recording lives in the Record view (F8).">⏺</button>
     </div>
 
     <div class="tb-group">
@@ -77,6 +77,8 @@
       <div id="browser-drums"></div>
       <h3>Instruments</h3>
       <div id="browser-melodic"></div>
+      <h3>Import</h3>
+      <div class="browser-item" id="browser-import" data-hint="Import audio|Bring your own sounds: pick WAV/MP3/OGG files (or just drag them anywhere onto the app) and they become playable channels in the Channel Rack.">⬆ Import audio files…</div>
       <h3>Vintage Drum Kits <span style="font-size:9px">(online)</span></h3>
       <div id="browser-kits"></div>
       <h3>Demo Songs</h3>
@@ -139,8 +141,9 @@
           <div class="playlist-toolbar">
             <span style="color:var(--text-dim);font-size:11px">PAINT WITH</span>
             <select id="playlist-pattern" data-hint="Paint pattern|Choose which pattern to paint onto the timeline, then click an empty cell to place it."></select>
-            <button class="mini-btn" id="playlist-clear" data-hint="Clear playlist|Removes all clips from the arrangement (patterns themselves are kept).">Clear</button>
-            <span style="color:var(--text-dim);font-size:11px;margin-left:auto">Click empty = place · click clip = remove · click ruler = scrub · drag ruler = fine scrub</span>
+            <button class="mini-btn" id="playlist-auto" data-hint="Add automation|Make any knob or fader move over time — filter sweeps, volume fades, build-ups. Adds a lane below the tracks where you draw the curve. Tip: right-clicking any mixer knob/fader does this too.">⚡ ＋ Auto</button>
+            <button class="mini-btn" id="playlist-clear" data-hint="Clear playlist|Removes all clips from the arrangement (patterns and automation lanes are kept).">Clear</button>
+            <span style="color:var(--text-dim);font-size:11px;margin-left:auto">drag clip = move · edge = resize · Shift+drag = clone · right-click = delete · drag ruler = loop</span>
           </div>
           <div id="playlist-scroll"><canvas id="playlist-canvas"></canvas></div>
         </div>
@@ -267,6 +270,7 @@
 <script src="js/effects.js"></script>
 <script src="js/state.js"></script>
 <script src="js/mixer.js"></script>
+<script src="js/automation.js"></script>
 <script src="js/sampler.js"></script>
 <script src="js/sequencer.js"></script>
 <script src="js/ui-rack.js"></script>
