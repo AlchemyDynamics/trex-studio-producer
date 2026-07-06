@@ -29,8 +29,10 @@ The **Browser** on the left lists every sound:
 
 ## 3. Melodies and basslines — Piano Roll (F7)
 
-1. Add a melodic instrument (try **Grand Piano** or **Sub Bass**).
-2. Open the **Piano Roll** and pick that channel at the top.
+**How it connects:** the Piano Roll doesn't have its own tracks — it's a zoomed-in editor for **one row of the Channel Rack**. A "piano track" is just a Grand Piano channel in the rack whose notes you write here. Rows with a melody show a mini note-preview in the rack (click it to jump back into the Piano Roll), and channels with notes are marked ♪ in the selector.
+
+1. Add a melodic instrument: **＋ Track** in the Piano Roll toolbar, or ＋ next to any instrument in the Browser (then click the row's 🎹).
+2. Pick the channel in the **RACK CHANNEL** dropdown at the top.
 3. **Click** the grid to place a note. **Drag** to move it. Drag its **right edge** to stretch it. **Right-click** deletes.
 4. Play notes live: click the **piano keys** on the left, or use your computer keyboard — **A S D F G H J K** are white keys, **W E T Y U** are the black keys, **Z / X** move octaves.
 5. **Editing power tools:** Ctrl+drag = box-select notes · drag any selected note = move them all together · **Ctrl+C / Ctrl+V** copy-paste · **Ctrl+B** duplicates the selection to the right (instant 2× melody) · **Shift+↑/↓** transpose a semitone, **Ctrl+↑/↓** an octave · **Del** removes · **Ctrl+A** selects all · Esc deselects.

@@ -114,8 +114,9 @@
         <!-- Piano Roll -->
         <div class="view" id="view-piano">
           <div class="piano-toolbar">
-            <span style="color:var(--text-dim);font-size:11px">CHANNEL</span>
-            <select id="piano-channel" data-hint="Piano Roll channel|Choose which instrument you're writing notes for."></select>
+            <span style="color:var(--text-dim);font-size:11px">RACK CHANNEL</span>
+            <select id="piano-channel" data-hint="Rack channel|The Piano Roll writes notes FOR a Channel Rack row — pick which one here. Channels marked ♪ already have a melody in this pattern. The notes play whenever this pattern plays."></select>
+            <button class="mini-btn" id="piano-addtrack" data-hint="New melody track|Adds a new instrument channel to the Channel Rack (piano, strings, bass…) and selects it here so you can write its melody right away.">＋ Track</button>
             <span style="color:var(--text-dim);font-size:11px">🎹 KEYS</span>
             <select id="piano-keys" data-hint="Keys sound|The tone you hear when you click the piano keys or type A–K. Grand Piano by default — switch to Electric Piano, Organ, Harpsichord, Music Box and more. 'Follow channel' plays the selected channel's own sound instead."></select>
             <select id="piano-snap" data-hint="Snap|Notes snap to this grid size when you draw them. Smaller = finer control.">

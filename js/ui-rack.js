@@ -88,10 +88,69 @@ const UIRack = (() => {
         format: v => { const p = Math.round((v * 2 - 1) * 100); return p === 0 ? 'C' : (p < 0 ? -p + 'L' : p + 'R'); },
       }));
 
+      // melody preview: a channel whose notes live in the Piano Roll shows them
+      // right here on its row (click to open and edit) — FL-style
+      const noteList = (pattern.notes[channel.id] || []);
+      const stepsData = State.stepsFor(pattern, channel.id);
+      const hasSteps = stepsData.some(st => st.on);
+      if (noteList.length && !hasSteps) {
+        const prev = document.createElement('canvas');
+        prev.className = 'note-preview';
+        prev.height = 30;
+        prev.dataset.hint = `Melody on ${channel.name}|These notes were written in the Piano Roll — this row and that editor are the same track. Click to open and edit the melody.`;
+        prev.onclick = () => { App.setPianoChannel(channel.id); App.showView('piano'); };
+        row.appendChild(prev);
+        requestAnimationFrame(() => {
+          prev.width = prev.clientWidth || 400;
+          const c = prev.getContext('2d');
+          c.fillStyle = '#14141b';
+          c.fillRect(0, 0, prev.width, prev.height);
+          for (let b = 1; b < pattern.length / 4; b++) {
+            c.fillStyle = b % 4 === 0 ? '#2e2e3a' : '#20202a';
+            c.fillRect((b * 4 / pattern.length) * prev.width, 0, 1, prev.height);
+          }
+          const keys = noteList.map(n => n.key);
+          const lo = Math.min(...keys) - 1, hi = Math.max(...keys) + 1;
+          c.fillStyle = inst.color;
+          for (const n of noteList) {
+            const x = (n.start / pattern.length) * prev.width;
+            const w = Math.max(2, (n.len / pattern.length) * prev.width - 1);
+            const y = 2 + (1 - (n.key - lo) / Math.max(1, hi - lo)) * (prev.height - 8);
+            c.globalAlpha = 0.5 + 0.5 * n.vel;
+            c.fillRect(x, y, w, 4);
+          }
+          c.globalAlpha = 1;
+          c.fillStyle = 'rgba(255,255,255,0.55)';
+          c.font = '9px sans-serif';
+          c.fillText('🎹 melody — click to edit', 6, 11);
+        });
+        // row tools still follow below
+        const tools = document.createElement('div');
+        tools.className = 'row-tools';
+        const pr = document.createElement('button');
+        pr.className = 'icon-btn'; pr.textContent = '🎹';
+        pr.dataset.hint = 'Open in Piano Roll|Edit this channel\'s melody.';
+        pr.onclick = () => { App.setPianoChannel(channel.id); App.showView('piano'); };
+        tools.appendChild(pr);
+        const del = document.createElement('button');
+        del.className = 'icon-btn'; del.textContent = '✕';
+        del.dataset.hint = 'Delete channel|Removes this instrument row and its notes from every pattern.';
+        del.onclick = () => {
+          if (!confirm(`Delete channel "${channel.name}"?`)) return;
+          State.snapshot();
+          State.project.channels = State.project.channels.filter(c => c.id !== channel.id);
+          render();
+        };
+        tools.appendChild(del);
+        row.appendChild(tools);
+        host.appendChild(row);
+        continue;
+      }
+
       // step grid
       const stepsEl = document.createElement('div');
       stepsEl.className = 'steps';
-      const steps = State.stepsFor(pattern, channel.id);
+      const steps = stepsData;
       for (let i = 0; i < pattern.length; i++) {
         const s = document.createElement('div');
         s.className = 'step' + (Math.floor(i / 4) % 2 === 0 ? ' beat1' : '');

@@ -385,9 +385,12 @@ const UIPiano = (() => {
     const sel = document.getElementById('piano-channel');
     const prev = channelId;
     sel.innerHTML = '';
+    const pat = State.activePattern();
     for (const ch of State.project.channels) {
       const o = document.createElement('option');
-      o.value = ch.id; o.textContent = ch.name;
+      o.value = ch.id;
+      const hasNotes = (pat.notes[ch.id] || []).length > 0;
+      o.textContent = (hasNotes ? '♪ ' : '') + ch.name;
       sel.appendChild(o);
     }
     if (prev && State.project.channels.some(c => c.id === prev)) {
@@ -435,6 +438,20 @@ const UIPiano = (() => {
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     document.getElementById('piano-channel').onchange = (e) => { channelId = e.target.value; render(); };
+    // "＋ Track": new instrument channel in the rack, selected here immediately
+    document.getElementById('piano-addtrack').onclick = () => {
+      const melodic = Instruments.list.filter(i => i.type === 'melodic');
+      const listing = melodic.map((i, n) => `${n + 1}. ${i.name}`).join('\n');
+      const pick = prompt('New melody track — which instrument?\n\n' + listing + '\n\nEnter a number:');
+      const idx = parseInt(pick, 10) - 1;
+      if (idx < 0 || idx >= melodic.length || isNaN(idx)) return;
+      State.snapshot();
+      const ch = State.newChannel(melodic[idx].id, (State.project.channels.length % 8) + 1);
+      State.project.channels.push(ch);
+      UIRack.render();
+      setChannel(ch.id);
+      App.toast('✔ ' + ch.name + ' added to the Channel Rack — draw its melody here');
+    };
     // Keys sound selector: Grand Piano default, all melodic instruments, or follow-channel
     const ks = document.getElementById('piano-keys');
     const kOpt = (val, label) => {

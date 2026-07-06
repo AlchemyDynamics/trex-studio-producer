@@ -64,6 +64,7 @@ const App = (() => {
     const tab = document.querySelector(`.view-tab[data-view="${name}"]`);
     if (view) view.classList.add('active');
     if (tab) tab.classList.add('active');
+    if (name === 'rack') UIRack.render();
     if (name === 'piano') UIPiano.render();
     if (name === 'playlist') UIPlaylist.render();
   }
@@ -165,7 +166,9 @@ const App = (() => {
           const track = (State.project.channels.length % 8) + 1;
           State.project.channels.push(State.newChannel(inst.id, track));
           UIRack.render();
-          toast(inst.name + ' added to Channel Rack');
+          toast(inst.type === 'melodic'
+            ? inst.name + ' added to the Channel Rack — click its 🎹 to write a melody in the Piano Roll'
+            : inst.name + ' added to Channel Rack');
         } else {
           Sequencer.previewInstrument(inst.id, inst.type === 'drum' ? 60 : 60);
         }
