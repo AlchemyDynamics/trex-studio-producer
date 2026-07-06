@@ -113,6 +113,12 @@ button { font-family: var(--font); }
 #master-meter { width: 90px; height: 12px; background: var(--bg-inset); border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
 #master-meter .fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-2) 60%, #ffd23b 82%, var(--danger)); transition: width 0.05s linear; }
 
+#clip-led {
+  font-size: 8px; font-weight: 800; letter-spacing: 1px; color: var(--danger);
+  opacity: 0.22; cursor: pointer; padding: 2px;
+}
+#clip-led.lit { opacity: 1; text-shadow: 0 0 8px var(--danger); animation: pulse 0.5s infinite; }
+
 /* Main body: sidebar + view area */
 #body { display: flex; flex: 1; min-height: 0; }
 
@@ -282,6 +288,9 @@ select, input[type="text"] {
 .strip .ms .mute.active { background: var(--danger); color: white; border-color: var(--danger); }
 .strip .ms .solo.active { background: #ffd23b; color: #17171c; border-color: #ffd23b; }
 .strip .fx-count { font-size: 9px; color: var(--accent-3); }
+.strip .sends { display: flex; gap: 8px; }
+.send-wrap { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.send-lbl { font-size: 8px; color: var(--text-dim); letter-spacing: 0.5px; }
 
 #fx-panel {
   flex: 1; background: var(--bg-panel); border: 1px solid var(--bg-inset); border-radius: var(--radius);

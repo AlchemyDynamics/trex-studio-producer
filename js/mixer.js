@@ -8,6 +8,25 @@
 
 const Mixer = (() => {
   let strips = [];   // runtime strips, index = mixer track id
+  let buses = null;  // shared send buses: { reverbIn, delayIn }
+
+  // one big shared reverb + one tempo-synced delay, fed by per-strip send knobs
+  function buildBuses(ctx, dest) {
+    const conv = ctx.createConvolver();
+    conv.buffer = Effects.makeImpulse(ctx, 2.4, 2.2);
+    const rvGain = ctx.createGain(); rvGain.gain.value = 1;
+    conv.connect(rvGain); rvGain.connect(dest);
+
+    const dl = ctx.createDelay(3);
+    dl.delayTime.value = 0.75 * (60 / (State.project.bpm || 130)); // dotted 8th
+    const fb = ctx.createGain(); fb.gain.value = 0.42;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 250;
+    const dlGain = ctx.createGain(); dlGain.gain.value = 0.9;
+    dl.connect(hp); hp.connect(fb); fb.connect(dl);
+    hp.connect(dlGain); dlGain.connect(dest);
+
+    return { reverbIn: conv, delayIn: dl };
+  }
 
   function build() {
     const ctx = Engine.ensureContext();
@@ -31,7 +50,9 @@ const Mixer = (() => {
     masterChain.load(cfg[0].fx);
     masterFader.gain.value = cfg[0].volume;
 
-    // Insert strips 1..N → master strip input
+    buses = buildBuses(ctx, strips[0].input);
+
+    // Insert strips 1..N → master strip input (+ post-fader send taps)
     for (let i = 1; i < cfg.length; i++) {
       const chain = Effects.createChain(ctx);
       const fader = ctx.createGain();
@@ -41,7 +62,11 @@ const Mixer = (() => {
       fader.connect(panner);
       panner.connect(analyser);
       analyser.connect(strips[0].input);
-      strips[i] = { input: chain.input, output: analyser, fader, panner, analyser, chain };
+      const sendRev = ctx.createGain(); sendRev.gain.value = 0;
+      const sendDel = ctx.createGain(); sendDel.gain.value = 0;
+      panner.connect(sendRev); sendRev.connect(buses.reverbIn);
+      panner.connect(sendDel); sendDel.connect(buses.delayIn);
+      strips[i] = { input: chain.input, output: analyser, fader, panner, analyser, chain, sendRev, sendDel };
       chain.load(cfg[i].fx);
       applyTrack(i);
     }
@@ -61,6 +86,8 @@ const Mixer = (() => {
     if (ctx) s.fader.gain.setTargetAtTime(target, ctx.currentTime, 0.015);
     else s.fader.gain.value = target;
     if (s.panner) s.panner.pan.value = cfg.pan;
+    if (s.sendRev) s.sendRev.gain.value = audible ? (cfg.sendReverb || 0) : 0;
+    if (s.sendDel) s.sendDel.gain.value = audible ? (cfg.sendDelay || 0) : 0;
   }
 
   function applyAll() {

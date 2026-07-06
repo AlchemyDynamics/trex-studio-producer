@@ -16,6 +16,7 @@ const Recorder = (() => {
   let takes = [];   // { name, buffer, sampleId }
   let takeCount = 0;
   let pendingChannel = null; // rack row created the moment recording starts
+  let pendingTrim = 0;       // seconds to cut from the take's head (count-in + latency)
 
   const constraintsFor = (deviceId) => ({
     audio: {
@@ -94,11 +95,20 @@ const Recorder = (() => {
     UIRack.render();
     document.getElementById('rec-btn').classList.add('recording');
     document.getElementById('btn-record').classList.add('active');
-    if (document.getElementById('rec-play-along').checked && !Engine.transport.playing) {
-      Engine.play();
-      App.syncTransportButtons();
+    // head trim: count-in duration + estimated round-trip latency
+    pendingTrim = 0;
+    if (document.getElementById('rec-latency').checked) {
+      const ctx = Engine.ctx;
+      pendingTrim += (ctx.baseLatency || 0) + (ctx.outputLatency || 0) + 0.02;
     }
-    App.toast('● Recording…');
+    if (document.getElementById('rec-play-along').checked && !Engine.transport.playing) {
+      Engine.play(true); // 1-bar count-in click before the song starts
+      App.syncTransportButtons();
+      pendingTrim += 16 * Engine.secondsPerStep();
+      App.toast('● Count-in… recording starts on the 1!');
+    } else {
+      App.toast('● Recording…');
+    }
   }
 
   function stopRecord() {
@@ -112,7 +122,18 @@ const Recorder = (() => {
     const blob = new Blob(chunks, { type: chunks[0] ? chunks[0].type : 'audio/webm' });
     try {
       const arr = await blob.arrayBuffer();
-      const buffer = await Engine.ctx.decodeAudioData(arr);
+      let buffer = await Engine.ctx.decodeAudioData(arr);
+      // cut the count-in + latency from the head so the take sits ON the beat
+      if (pendingTrim > 0 && buffer.duration > pendingTrim + 0.05) {
+        const rate = buffer.sampleRate;
+        const startI = Math.floor(pendingTrim * rate);
+        const trimmed = Engine.ctx.createBuffer(buffer.numberOfChannels, buffer.length - startI, rate);
+        for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+          trimmed.copyToChannel(buffer.getChannelData(ch).subarray(startI), ch);
+        }
+        buffer = trimmed;
+      }
+      pendingTrim = 0;
       takeCount++;
       const name = 'Take ' + takeCount;
       const sampleId = Sampler.addUserSample(name, buffer);

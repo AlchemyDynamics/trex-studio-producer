@@ -87,6 +87,29 @@ const UIMixer = (() => {
       }
       strip.appendChild(ms);
 
+      // sends to the shared reverb / delay buses
+      if (i !== 0) {
+        const sends = document.createElement('div');
+        sends.className = 'sends';
+        const mk = (label, key, hint) => {
+          const wrap = document.createElement('div');
+          wrap.className = 'send-wrap';
+          wrap.appendChild(App.makeKnob({
+            value: t[key] || 0, min: 0, max: 1, small: true,
+            hint,
+            onChange: v => { t[key] = v; Mixer.applyTrack(i); },
+            format: v => Math.round(v * 100) + '%',
+          }));
+          const l = document.createElement('div');
+          l.className = 'send-lbl'; l.textContent = label;
+          wrap.appendChild(l);
+          sends.appendChild(wrap);
+        };
+        mk('REV', 'sendReverb', `Reverb send — ${t.name}|Sends a copy of this track into one big shared hall reverb. Turn it up for space and depth — the mix's glue.`);
+        mk('DLY', 'sendDelay', `Delay send — ${t.name}|Sends a copy into a shared tempo-synced echo. Great for vocals, leads and one-shot accents.`);
+        strip.appendChild(sends);
+      }
+
       const fxc = document.createElement('div');
       fxc.className = 'fx-count';
       fxc.textContent = t.fx.length ? t.fx.length + ' FX' : '';
@@ -120,6 +143,37 @@ const UIMixer = (() => {
     window.addEventListener('mousemove', (e) => { if (dragging) set(e.clientY); });
     window.addEventListener('mouseup', () => { dragging = false; });
     track.addEventListener('dblclick', () => { t.volume = 0.8; Mixer.applyTrack(i); positionThumb(thumb, track, 0.8); });
+  }
+
+  // ---------- FX presets: one click to a pro-sounding chain ----------
+  const PRESETS = [
+    { name: '✨ Vocal Shine', desc: 'Air on top, a touch of room, smooth compression — for voices and leads.',
+      fx: [{ defId: 'eq3', values: { low: -2, mid: 0, high: 4 } }, { defId: 'compressor', values: { threshold: -20, ratio: 4, attack: 0.01, release: 0.25 } }, { defId: 'reverb', values: { size: 1.6, mix: 0.22 } }] },
+    { name: '🥁 Drum Punch', desc: 'Tight compression and EQ snap — kick and snare hit harder.',
+      fx: [{ defId: 'compressor', values: { threshold: -18, ratio: 5, attack: 0.005, release: 0.15 } }, { defId: 'eq3', values: { low: 4, mid: -1, high: 2 } }] },
+    { name: '🎞 Lo-fi', desc: 'Dusty, warm, old-tape vibe — muffled highs and gentle grit.',
+      fx: [{ defId: 'filter', values: { type: 'lowpass', cutoff: 2600, q: 0.8 } }, { defId: 'distortion', values: { drive: 16, tone: 3200, level: 0.75 } }] },
+    { name: '🌌 Huge Space', desc: 'Cathedral reverb + long echoes — pads, intros, epic moments.',
+      fx: [{ defId: 'reverb', values: { size: 3.6, mix: 0.45 } }, { defId: 'delay', values: { time: 0.42, feedback: 0.45, mix: 0.3 } }] },
+    { name: '📞 Telephone', desc: 'Thin, crunchy radio/phone voice — a classic intro trick.',
+      fx: [{ defId: 'filter', values: { type: 'bandpass', cutoff: 1600, q: 4 } }, { defId: 'distortion', values: { drive: 12, tone: 4000, level: 0.8 } }] },
+    { name: '🔊 Bass Power', desc: 'Bigger lows with harmonics so the bass shows up on small speakers.',
+      fx: [{ defId: 'eq3', values: { low: 5, mid: 0, high: 1 } }, { defId: 'distortion', values: { drive: 9, tone: 2800, level: 0.8 } }, { defId: 'compressor', values: { threshold: -16, ratio: 4, attack: 0.02, release: 0.2 } }] },
+    { name: '🧼 Clean', desc: 'Removes every effect from this strip.', fx: [] },
+  ];
+
+  function pickPreset() {
+    App.choose({
+      title: '★ Effect presets — ' + State.project.mixer[selected].name,
+      items: PRESETS.map(p => ({ label: p.name, desc: p.desc, color: '#ffd23b' })),
+      onPick: (i) => {
+        State.snapshot();
+        Mixer.strips[selected].chain.load(PRESETS[i].fx.map(f => ({ ...f, bypassed: false })));
+        State.project.mixer[selected].fx = Mixer.strips[selected].chain.serialize();
+        render();
+        App.toast(PRESETS[i].name + ' applied to ' + State.project.mixer[selected].name + ' — tweak the knobs from here');
+      },
+    });
   }
 
   // ---------- FX panel ----------
@@ -201,6 +255,13 @@ const UIMixer = (() => {
     // add-effect buttons
     const add = document.getElementById('fx-add');
     add.innerHTML = '';
+    const pre = document.createElement('button');
+    pre.className = 'mini-btn';
+    pre.style.borderColor = '#ffd23b';
+    pre.textContent = '★ Presets';
+    pre.dataset.hint = 'Effect presets|One click to a pro-sounding effect chain — Vocal Shine, Drum Punch, Lo-fi, Huge Space… then tweak the knobs.';
+    pre.onclick = pickPreset;
+    add.appendChild(pre);
     Effects.defs.forEach(def => {
       const b = document.createElement('button');
       b.className = 'mini-btn';

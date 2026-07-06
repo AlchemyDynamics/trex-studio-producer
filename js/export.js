@@ -33,6 +33,19 @@ const Exporter = (() => {
     mFader.connect(masterGain);
     strips[0] = { input: mChain.input, fader: mFader, chain: mChain, audible: !cfg[0].mute };
 
+    // shared send buses (mirror of Mixer.buildBuses)
+    const conv = octx.createConvolver();
+    conv.buffer = Effects.makeImpulse(octx, 2.4, 2.2);
+    const rvGain = octx.createGain(); rvGain.gain.value = 1;
+    conv.connect(rvGain); rvGain.connect(strips[0].input);
+    const dl = octx.createDelay(3);
+    dl.delayTime.value = 0.75 * (60 / (State.project.bpm || 130));
+    const dfb = octx.createGain(); dfb.gain.value = 0.42;
+    const dhp = octx.createBiquadFilter(); dhp.type = 'highpass'; dhp.frequency.value = 250;
+    const dlGain = octx.createGain(); dlGain.gain.value = 0.9;
+    dl.connect(dhp); dhp.connect(dfb); dfb.connect(dl);
+    dhp.connect(dlGain); dlGain.connect(strips[0].input);
+
     const anySolo = cfg.some(t => t.solo && t.id !== 0);
     for (let i = 1; i < cfg.length; i++) {
       const chain = Effects.createChain(octx);
@@ -45,6 +58,14 @@ const Exporter = (() => {
       chain.output.connect(fader);
       fader.connect(panner);
       panner.connect(strips[0].input);
+      if (audible && (cfg[i].sendReverb || 0) > 0) {
+        const sr = octx.createGain(); sr.gain.value = cfg[i].sendReverb;
+        panner.connect(sr); sr.connect(conv);
+      }
+      if (audible && (cfg[i].sendDelay || 0) > 0) {
+        const sd = octx.createGain(); sd.gain.value = cfg[i].sendDelay;
+        panner.connect(sd); sd.connect(dl);
+      }
       strips[i] = { input: chain.input, fader, panner, chain, audible };
     }
     return { strips, masterGain };
@@ -141,18 +162,58 @@ const Exporter = (() => {
     }
 
     App.toast('Rendering ' + (isSong ? 'song' : 'pattern') + '…');
-    const buffer = await octx.startRendering();
+    return octx.startRendering();
+  }
+
+  async function exportWav() {
+    const buffer = await render();
     const blob = Engine.encodeWav(buffer);
     const name = (State.project.name || 'trex-song').replace(/[^a-z0-9-_]/gi, '_') + '.wav';
     App.download(blob, name);
     App.toast('✔ Exported ' + name + ' (' + (blob.size / 1048576).toFixed(1) + ' MB)');
   }
 
+  // small shareable file: play the rendered buffer (silently) into a MediaRecorder
+  async function exportCompressed() {
+    const buffer = await render();
+    App.toast('Encoding compressed audio — takes as long as the song plays…');
+    const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ctx2.createBufferSource();
+    src.buffer = buffer;
+    const msd = ctx2.createMediaStreamDestination();
+    src.connect(msd); // not connected to speakers — encodes silently
+    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+      : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+    const rec = new MediaRecorder(msd.stream, mime ? { mimeType: mime, audioBitsPerSecond: 160000 } : undefined);
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    const done = new Promise(res => { rec.onstop = res; });
+    rec.start();
+    src.start();
+    src.onended = () => { try { rec.stop(); } catch (e) {} };
+    await done;
+    ctx2.close();
+    const ext = (mime.includes('mp4')) ? '.m4a' : '.webm';
+    const blob = new Blob(chunks, { type: mime || 'audio/webm' });
+    const name = (State.project.name || 'trex-song').replace(/[^a-z0-9-_]/gi, '_') + ext;
+    App.download(blob, name);
+    App.toast('✔ Exported ' + name + ' (' + (blob.size / 1048576).toFixed(1) + ' MB) — small enough to text to your friends');
+  }
+
   function init() {
     document.getElementById('btn-export').onclick = () => {
-      render().catch(err => App.toast('Export failed: ' + err.message));
+      App.choose({
+        title: '⬇ Export your song',
+        items: [
+          { label: 'WAV — best quality', desc: 'Uncompressed studio quality. Big file. Renders in seconds.', color: '#35d0a0' },
+          { label: 'Compressed — small & shareable', desc: 'Opus-encoded audio (.webm/.m4a) around a tenth the size. Encodes in real time, so it takes as long as the song.', color: '#5aa2ff' },
+        ],
+        onPick: (i) => {
+          (i === 0 ? exportWav() : exportCompressed()).catch(err => App.toast('Export failed: ' + err.message));
+        },
+      });
     };
   }
 
-  return { init, render };
+  return { init, render, exportWav, exportCompressed };
 })();

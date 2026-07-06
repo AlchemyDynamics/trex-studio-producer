@@ -415,6 +415,30 @@ const App = (() => {
     };
   }
 
+  // ---------- Web MIDI: plug in a keyboard and play ----------
+  function initMidi() {
+    if (!navigator.requestMIDIAccess) return;
+    navigator.requestMIDIAccess().then((access) => {
+      const hook = (input) => {
+        input.onmidimessage = (m) => {
+          const [status, note, vel] = m.data;
+          const cmd = status & 0xF0;
+          if (cmd === 0x90 && vel > 0) UIPiano.midiNoteOn(note, vel / 127);
+        };
+      };
+      access.inputs.forEach(hook);
+      access.onstatechange = (e) => {
+        if (e.port.type === 'input' && e.port.state === 'connected') {
+          hook(e.port);
+          toast('🎹 MIDI keyboard connected: ' + (e.port.name || 'device'));
+        }
+      };
+      if (access.inputs.size) {
+        toast('🎹 MIDI ready: ' + [...access.inputs.values()].map(i => i.name).join(', ') + ' — just play!');
+      }
+    }).catch(() => { /* no MIDI permission — typing keys still work */ });
+  }
+
   function refreshAll() {
     Engine.setBpm(State.project.bpm);
     Engine.setSwing(State.project.swing);
@@ -473,16 +497,26 @@ const App = (() => {
   }
 
   // ---------- rAF loop: playheads + meters ----------
+  let clipUntil = 0;
   function frame() {
     if (Engine.ctx) {
       const cur = Engine.currentUiStep();
-      if (cur && Engine.transport.mode === 'pattern') UIRack.paintPlayhead(cur.step);
+      if (cur && Engine.transport.mode === 'pattern') {
+        UIRack.paintPlayhead(cur.step);
+        if (document.getElementById('view-piano').classList.contains('active')) {
+          UIPiano.setPlayhead(cur.step);
+        }
+      }
       if (Engine.transport.playing && Engine.transport.mode === 'song'
         && document.getElementById('view-playlist').classList.contains('active')) {
         UIPlaylist.paintPlayhead();
       }
       if (Engine.transport.playing) updatePosition();
-      document.getElementById('master-fill').style.width = Math.min(100, Engine.masterLevel() * 110) + '%';
+      const level = Engine.masterLevel();
+      document.getElementById('master-fill').style.width = Math.min(100, level * 110) + '%';
+      const led = document.getElementById('clip-led');
+      if (level > 0.97) { led.classList.add('lit'); clipUntil = performance.now() + 2000; }
+      else if (performance.now() > clipUntil) led.classList.remove('lit');
       if (mixerOpen()) UIMixer.paintMeters();
       Recorder.paintMonitor();
     }
@@ -585,6 +619,9 @@ const App = (() => {
     AIAssist.init();
     renderBrowser();
     initImport();
+    initMidi();
+    document.getElementById('clip-led').onclick = (e) => e.currentTarget.classList.remove('lit');
+    Engine.on('stop', () => UIPiano.setPlayhead(null));
   }
 
   document.addEventListener('DOMContentLoaded', init);

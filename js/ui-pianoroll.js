@@ -22,6 +22,20 @@ const UIPiano = (() => {
   const pressedKeys = new Set();
   const selected = new Set();  // selected note objects
   let clipboard = [];          // copied notes, starts normalized to 0
+  let playheadStep = null;     // moving line while the pattern plays
+
+  // scale highlighting
+  let scale = null;            // { root: 0-11, intervals: Set }
+  const SCALES = { major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10] };
+  // chord stamping
+  const CHORDS = {
+    single: [0], octave: [0, 12], power: [0, 7, 12],
+    major: [0, 4, 7], minor: [0, 3, 7], dom7: [0, 4, 7, 10], min7: [0, 3, 7, 10],
+  };
+  function chordIntervals() {
+    const sel = document.getElementById('piano-chord');
+    return CHORDS[sel ? sel.value : 'single'] || [0];
+  }
 
   // Which sound should a key/note audition use?
   // - keys & typing: the Keys voice (or the channel when set to 'Follow channel')
@@ -93,11 +107,18 @@ const UIPiano = (() => {
     const c = ctx2d;
     c.clearRect(0, 0, canvas.width, canvas.height);
 
-    // rows
+    // rows (tinted by scale when one is chosen)
     for (let i = 0; i < NUM_KEYS; i++) {
       const key = TOP_KEY - i;
-      c.fillStyle = isBlack(key) ? '#15151b' : '#1d1d25';
-      if (key % 12 === 0) c.fillStyle = '#232330'; // highlight C rows
+      if (scale) {
+        const deg = ((key - scale.root) % 12 + 12) % 12;
+        if (deg === 0) c.fillStyle = '#25303f';            // root — glow
+        else if (scale.intervals.has(deg)) c.fillStyle = '#20242f'; // in key
+        else c.fillStyle = '#121218';                       // out of key — stay away
+      } else {
+        c.fillStyle = isBlack(key) ? '#15151b' : '#1d1d25';
+        if (key % 12 === 0) c.fillStyle = '#232330'; // highlight C rows
+      }
       c.fillRect(KEYS_W, i * KEY_H, canvas.width, KEY_H - 1);
     }
     // beat/bar lines
@@ -126,6 +147,12 @@ const UIPiano = (() => {
       c.fillStyle = 'rgba(255,255,255,0.85)';
       c.font = '9px sans-serif';
       if (n.len * stepW > 30) c.fillText(keyName(n.key), x + 4, y + 11);
+    }
+    // playhead line while the pattern plays
+    if (playheadStep != null && Engine.transport.playing && Engine.transport.mode === 'pattern') {
+      const px = KEYS_W + playheadStep * stepW;
+      c.fillStyle = 'rgba(255,255,255,0.85)';
+      c.fillRect(px, 0, 2, canvas.height);
     }
     // marquee selection rectangle
     if (drag && drag.type === 'marquee') {
@@ -219,18 +246,29 @@ const UIPiano = (() => {
       return;
     }
 
-    // add note
+    // add note (or a whole chord, per the chord-mode selector)
     State.snapshot();
     const snap = snapVal();
     const start = Math.floor((x - KEYS_W) / stepW / snap) * snap;
     const key = TOP_KEY - Math.floor(y / KEY_H);
     if (start < 0 || start >= pattern.length || key < BOTTOM_KEY || key > TOP_KEY) return;
-    const n = { key, start, len: Math.min(drawLen(), pattern.length - start), vel: 0.9 };
-    notes().push(n);
-    playKey(key, true); // grid notes audition with the channel's own sound when it's pitched
+    const len = Math.min(drawLen(), pattern.length - start);
     selected.clear();
-    selected.add(n);
-    drag = { type: 'move', anchor: n, offsetSteps: 0, orig: [{ n, start: n.start, key: n.key }] };
+    let anchor = null;
+    for (const iv of chordIntervals()) {
+      const k = key + iv;
+      if (k < BOTTOM_KEY || k > TOP_KEY) continue;
+      const n = { key: k, start, len, vel: 0.9 };
+      notes().push(n);
+      selected.add(n);
+      if (iv === 0) anchor = n;
+    }
+    if (!anchor) return;
+    playKey(key, true); // grid notes audition with the channel's own sound when it's pitched
+    drag = {
+      type: 'move', anchor, offsetSteps: 0,
+      orig: [...selected].map(n => ({ n, start: n.start, key: n.key })),
+    };
     render();
   }
 
@@ -469,6 +507,25 @@ const UIPiano = (() => {
       keysVoice = e.target.value;
       if (keysVoice !== 'channel') Sequencer.previewInstrument(keysVoice, 60);
     };
+    // scale selector: none + 12 majors + 12 minors
+    const sc = document.getElementById('piano-scale');
+    const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const scOpt = (v, label) => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = label;
+      sc.appendChild(o);
+    };
+    scOpt('none', 'Scale: off');
+    NAMES.forEach((n, r) => scOpt(r + ':major', n + ' Major'));
+    NAMES.forEach((n, r) => scOpt(r + ':minor', n + ' Minor'));
+    sc.onchange = (e) => {
+      if (e.target.value === 'none') scale = null;
+      else {
+        const [root, mode] = e.target.value.split(':');
+        scale = { root: parseInt(root, 10), intervals: new Set(SCALES[mode]) };
+      }
+      render();
+    };
     document.getElementById('piano-clear').onclick = () => {
       const ch = channel();
       if (!ch) return;
@@ -482,5 +539,16 @@ const UIPiano = (() => {
     setTimeout(() => { scroller.scrollTop = (TOP_KEY - 72) * KEY_H; }, 50);
   }
 
-  return { init, render, setChannel, handleKey, handleShortcut, clearSelection };
+  // MIDI keyboard input (velocity-sensitive, captured when note-recording)
+  function midiNoteOn(key, velocity) {
+    playKey(key, false, Math.max(0.15, velocity), true);
+  }
+
+  function setPlayhead(step) {
+    if (step === playheadStep) return;
+    playheadStep = step;
+    render();
+  }
+
+  return { init, render, setChannel, handleKey, handleShortcut, clearSelection, midiNoteOn, setPlayhead };
 })();

@@ -60,6 +60,7 @@
         <div class="lbl">Master</div>
       </div>
       <div id="master-meter"><div class="fill" id="master-fill"></div></div>
+      <div id="clip-led" data-hint="Clip indicator|Lights red when the master output clips (distorts). If it keeps lighting, pull the master or your loudest tracks down. Click to reset.">CLIP</div>
     </div>
 
     <button class="tb-wide" id="btn-new" data-hint="New project|Saves your current song first (browser + .trex download), then opens a fresh blank project.">✚ New</button>
@@ -131,6 +132,16 @@
               <option value="8">Draw: 1/2</option>
               <option value="16">Draw: 1 bar</option>
             </select>
+            <select id="piano-chord" data-hint="Chord mode|Draw whole chords with one click: pick Major and every note you place becomes a 3-note major chord. Octave and Power are great for basses and leads.">
+              <option value="single" selected>♩ Single</option>
+              <option value="octave">Octave</option>
+              <option value="power">Power (5th)</option>
+              <option value="major">Major chord</option>
+              <option value="minor">Minor chord</option>
+              <option value="dom7">7th chord</option>
+              <option value="min7">Minor 7th</option>
+            </select>
+            <select id="piano-scale" data-hint="Scale highlight|Lights up the rows that belong to a key, so it's hard to hit a wrong note. Root notes glow strongest. Try A Minor or C Major to start."></select>
             <button class="mini-btn" id="piano-clear" data-hint="Clear notes|Removes every note for this channel in this pattern.">Clear</button>
             <span style="color:var(--text-dim);font-size:11px;margin-left:auto">Tip: click to add · drag to move · right-click to delete · drag right edge to stretch · Z/X octave, A–K plays keys</span>
           </div>
@@ -165,8 +176,11 @@
                   <label style="font-size:11px;color:var(--text-dim)" data-hint="Monitor|Hear your input live through the studio (use headphones to avoid feedback!).">
                     <input type="checkbox" id="rec-monitor-on"> Monitor input
                   </label>
-                  <label style="font-size:11px;color:var(--text-dim)" data-hint="Play while recording|Plays your song while you record, so you can perform along with the beat.">
-                    <input type="checkbox" id="rec-play-along" checked> Play song while recording
+                  <label style="font-size:11px;color:var(--text-dim)" data-hint="Play while recording|Plays your song while you record — with a 1-bar count-in click so you start right on the beat.">
+                    <input type="checkbox" id="rec-play-along" checked> Play song while recording (1-bar count-in)
+                  </label>
+                  <label style="font-size:11px;color:var(--text-dim)" data-hint="Latency fix|Computers hear your mic slightly late (20–80ms). This automatically shifts your take back so it lands ON the beat instead of just behind it.">
+                    <input type="checkbox" id="rec-latency" checked> Auto latency fix
                   </label>
                 </div>
               </div>

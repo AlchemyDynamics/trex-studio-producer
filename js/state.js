@@ -15,6 +15,7 @@ const State = (() => {
         id: i,
         name: i === 0 ? 'Master' : 'Insert ' + i,
         volume: 0.8, pan: 0, mute: false, solo: false,
+        sendReverb: 0, sendDelay: 0, // shared bus send amounts
         fx: [], // [{ defId, values, bypassed }]
       });
     }
@@ -187,6 +188,10 @@ const State = (() => {
     // upgrade projects saved before these features existed
     p.automation = p.automation || [];
     p.loop = p.loop || { start: 0, end: 0 };
+    (p.mixer || []).forEach(t => {
+      t.sendReverb = t.sendReverb || 0;
+      t.sendDelay = t.sendDelay || 0;
+    });
     project = p;
   }
   function saveLocal(slot = 'autosave') {

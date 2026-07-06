@@ -34,10 +34,12 @@ The **Browser** on the left lists every sound:
 1. Add a melodic instrument: **＋ Track** in the Piano Roll toolbar, or ＋ next to any instrument in the Browser (then click the row's 🎹).
 2. Pick the channel in the **RACK CHANNEL** dropdown at the top.
 3. **Click** the grid to place a note. **Drag** to move it. Drag its **right edge** to stretch it. **Right-click** deletes.
-4. Play notes live: click the **piano keys** on the left, or use your computer keyboard — **A S D F G H J K** are white keys, **W E T Y U** are the black keys, **Z / X** move octaves.
-5. **Editing power tools:** Ctrl+drag = box-select notes · drag any selected note = move them all together · **Ctrl+C / Ctrl+V** copy-paste · **Ctrl+B** duplicates the selection to the right (instant 2× melody) · **Shift+↑/↓** transpose a semitone, **Ctrl+↑/↓** an octave · **Del** removes · **Ctrl+A** selects all · Esc deselects.
-6. **Record your playing!** Hit the toolbar **⏺** to arm, then press Play (pattern mode). You get a 1-bar count-in click, then everything you play — screen keys or A–K — is written into the pattern, snapped to the grid. Loop keeps going so you can layer more each pass.
-7. The **🎹 KEYS** dropdown picks the sound the keys play — Grand Piano by default, or Electric Piano, Organ, Church Organ, Harpsichord, Clavinet, Music Box, Accordion and every other melodic instrument. Choose "↳ Follow channel" to hear the selected channel's own sound instead. (Notes you place in the grid always play their channel's instrument during playback.)
+4. **Scale highlight:** pick a key (try *A Minor*) in the Scale dropdown — in-key rows light up and roots glow, so wrong notes are hard to hit. **Chord mode:** set Draw to *Major* or *Minor* and every click places a full chord.
+5. **Got a MIDI keyboard?** Plug it in (Chrome/Edge) — it just works, velocity and all, including into note recording.
+6. Play notes live: click the **piano keys** on the left, or use your computer keyboard — **A S D F G H J K** are white keys, **W E T Y U** are the black keys, **Z / X** move octaves.
+7. **Editing power tools:** Ctrl+drag = box-select notes · drag any selected note = move them all together · **Ctrl+C / Ctrl+V** copy-paste · **Ctrl+B** duplicates the selection to the right (instant 2× melody) · **Shift+↑/↓** transpose a semitone, **Ctrl+↑/↓** an octave · **Del** removes · **Ctrl+A** selects all · Esc deselects.
+8. **Record your playing!** Hit the toolbar **⏺** to arm, then press Play (pattern mode). You get a 1-bar count-in click, then everything you play — screen keys or A–K — is written into the pattern, snapped to the grid. Loop keeps going so you can layer more each pass.
+9. The **🎹 KEYS** dropdown picks the sound the keys play — Grand Piano by default, or Electric Piano, Organ, Church Organ, Harpsichord, Clavinet, Music Box, Accordion and every other melodic instrument. Choose "↳ Follow channel" to hear the selected channel's own sound instead. (Notes you place in the grid always play their channel's instrument during playback.)
 
 **Cheat codes for sounding good:**
 - Stay "in key": start with only the white-key notes A, C, D, E, G (A minor pentatonic — everything sounds good together).
@@ -69,7 +71,9 @@ Mixing = making everything fit together. The mixer opens in its **own floating w
   - **EQ** = tone control. Cut lows on everything that isn't kick or bass.
   - **Compressor** = evens out loudness, adds punch.
   - **Distortion** = grit for basses and leads. **Chorus** = width and shimmer.
-- Watch the **Master meter** (top right): if it slams into the red, lower the master or your loudest tracks.
+- **REV / DLY send knobs** (bottom of each strip): every track can send a copy of itself into one big shared **hall reverb** and a **tempo-synced echo**. This is how real mixes get glued — a little REV on drums, keys and vocals puts everyone in the same room.
+- **★ Presets** (in the effects panel): one click to a pro chain — *Vocal Shine, Drum Punch, Lo-fi, Huge Space, Telephone, Bass Power* — then tweak the knobs from there.
+- Watch the **Master meter** (top right): if it slams into the red — or the **CLIP** light comes on — lower the master or your loudest tracks.
 
 ## 5½. Automation — make the mix MOVE ⚡
 
@@ -83,7 +87,7 @@ Automation is the secret sauce of electronic music: knobs that turn themselves.
 ## 6. Recording — Record (F8)
 
 1. Plug in your mic or USB audio interface, open the **Record** view, hit **↻** to scan inputs and pick one.
-2. Check **Play song while recording** to perform along with the beat. Use headphones if you enable **Monitor** (avoids feedback).
+2. Check **Play song while recording** — you'll get a **1-bar count-in click** so you start right on the beat. Use headphones if you enable **Monitor** (avoids feedback). Leave **Auto latency fix** on: it shifts your take back by the small delay every computer adds, so recordings land ON the beat.
 3. Hit the big **⏺** — a **🎙 audio track appears in the Channel Rack immediately**. Perform, then hit ⏺ again to stop.
 4. Your recording lands on that rack channel with step 1 armed, so pressing play triggers it with your beat. Move the step to change where it fires, or open it in the Piano Roll to pitch it up/down like a sampler.
 5. The take also appears below with a waveform: click to audition, **→ Playlist** places it on the song timeline instead, **⬇ WAV** saves it as a file.
@@ -94,7 +98,7 @@ Automation is the secret sauce of electronic music: knobs that turn themselves.
 - **✚ New** saves your current song (browser + `.trex` download) and opens a fresh blank project.
 - The app **autosaves** to your browser every 15 seconds.
 - **💾 Save** also downloads a `.trex` file — back it up or share it with friends (they open it with **📂 Open**).
-- **⬇ WAV** renders your entire song to a high-quality WAV file you can share, upload, or put on your phone.
+- **⬇ WAV** now asks: **WAV** (studio quality, renders in seconds) or **Compressed** (about 10× smaller, encodes in real time — perfect for texting to friends).
 
 ## 8. The AI Co-Producer ✨
 

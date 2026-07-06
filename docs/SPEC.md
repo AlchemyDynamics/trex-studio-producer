@@ -51,8 +51,8 @@ Legend: ✅ shipped · 🟡 partial · ❌ missing · Priority **P0** (foundatio
 | Piano roll: draw/move/resize/delete, snap, zoom, keys gutter | ✅ | — |
 | **Per-step velocity/accent editing** (drag vertically on a lit step; fill height shows accent) | ✅ | shipped |
 | **Piano roll selection & clipboard**: marquee select, copy/paste, Ctrl+B duplicate-right, Shift+arrows transpose, Del | ✅ | shipped |
-| Scale helper: highlight in-key rows / optional scale lock ("can't sound bad") | ❌ | P1 |
-| Chord stamp tool (click once → major/minor/7th chord) | ❌ | P1 |
+| Scale helper: 24 keys, in-key rows highlighted, roots glow | ✅ | shipped |
+| Chord draw modes: octave, power, major, minor, 7th, m7 | ✅ | shipped |
 | Quantize command (snap recorded/played notes to grid, with strength) | ❌ | P1 (pairs with pillar 3) |
 | Humanize (randomize velocity/timing slightly) | ❌ | P2 |
 | Per-pattern time signatures / triplet grid | ❌ | P2 |
@@ -62,7 +62,7 @@ Legend: ✅ shipped · 🟡 partial · ❌ missing · Priority **P0** (foundatio
 |---|---|---|
 | Live audition via typing keyboard / clicking keys | ✅ | — |
 | **Note recording**: ⏺ arms, count-in, played keys written into the pattern quantized to the grid while the loop plays | ✅ | shipped |
-| **Web MIDI input**: plug in a USB keyboard/pad controller and play — works in Chrome/Edge today | ❌ | **P1** |
+| **Web MIDI input**: plug in a USB keyboard/pad controller and play (velocity-sensitive, feeds note recording) | ✅ | shipped |
 | Count-in (1 bar of metronome before capture starts) | ✅ | shipped |
 | Loop-overdub (keep looping, layer more notes each pass) | ❌ | P1 |
 
@@ -72,8 +72,8 @@ Legend: ✅ shipped · 🟡 partial · ❌ missing · Priority **P0** (foundatio
 | Device picker (any mic/interface), music-grade constraints, monitoring, live waveform | ✅ | — |
 | Recording → Channel Rack track automatically, takes list, WAV per take | ✅ | — |
 | Recordings persist inside .trex files | ✅ | — |
-| **Count-in for audio takes** (engine count-in shipped for note recording; wire it into the audio-record flow too) | 🟡 | **P1** |
-| **Latency compensation** — recordings land 20–80 ms late (hardware+browser); auto-shift takes left by a calibrated offset, expose a nudge control | ❌ | **P1** — this is why takes feel "off the beat" |
+| Count-in for audio takes (1-bar click, head auto-trimmed) | ✅ | shipped |
+| Latency compensation — auto head-trim from baseLatency+outputLatency estimate, toggleable | ✅ | shipped (calibration tool P2) |
 | Trim take (head/tail silence) in a small waveform editor | ❌ | P1 |
 | Punch in/out, take comping (keep best parts of multiple passes) | ❌ | P2 |
 
@@ -99,9 +99,9 @@ Legend: ✅ shipped · 🟡 partial · ❌ missing · Priority **P0** (foundatio
 | Capability | Status | Priority |
 |---|---|---|
 | Master + 8 inserts, faders, pan, mute/solo, meters, 8-slot FX chains, 7 effect types, channel→insert routing | ✅ | — |
-| **Send/aux buses** — one shared reverb/delay that many channels feed by amount (how mixes actually get glued; cheaper than per-insert reverbs too) | ❌ | **P1** |
-| Effect presets ("Vocal shine", "Drum punch", "Lo-fi") — one click, then tweak | ❌ | P1 (huge for a learner) |
-| dB-calibrated meters + clip indicators on master | ❌ | P1 |
+| **Send/aux buses** — shared hall reverb + tempo-synced delay, REV/DLY knobs per strip, mirrored in WAV export | ✅ | shipped |
+| Effect presets (Vocal Shine, Drum Punch, Lo-fi, Huge Space, Telephone, Bass Power, Clean) | ✅ | shipped |
+| Clip indicator on master ✅; dB-calibrated meter scales pending | 🟡 | P2 |
 | More insert tracks (grow past 8 on demand) | ❌ | P2 |
 | Spectrum analyzer view on EQ | ❌ | P2 |
 
@@ -110,7 +110,7 @@ Legend: ✅ shipped · 🟡 partial · ❌ missing · Priority **P0** (foundatio
 |---|---|---|
 | Undo/redo 60 levels, keyboard shortcuts, double-click-reset knobs | ✅ | — |
 | **Clipboard everywhere**: notes ✅, clips (shift-drag clone) ✅; steps rows (copy pattern row → another channel) pending | 🟡 | P1 |
-| Replace `prompt()`/`confirm()` dialogs with proper in-app modals & right-click context menus (rename, channel routing, delete) | 🟡 | **P1** — the prompts feel broken next to the rest of the UI |
+| In-app chooser modals for all pickers (instrument, track, automation, open, channel options); text-input prompts remain for naming | ✅ | shipped |
 | Drag to reorder channels in the rack | ❌ | P2 |
 
 ### 9. Import / export
@@ -118,7 +118,7 @@ Legend: ✅ shipped · 🟡 partial · ❌ missing · Priority **P0** (foundatio
 |---|---|---|
 | WAV export (offline render), .trex save/load with embedded audio, autosave | ✅ | — |
 | **Audio file import** (drag-drop or picker → channel) | ✅ | shipped |
-| **MP3/OGG export** (WAV files are huge for sharing; MediaRecorder can encode) | ❌ | **P1** |
+| Compressed export (.webm/.m4a opus via silent real-time re-encode) | ✅ | shipped |
 | Stem export (one WAV per mixer track — for collabs/remixes) | ❌ | P2 |
 | MIDI file import/export | ❌ | P2 |
 | Multiple named project slots in-browser + project browser on splash | ❌ | P1 |
@@ -127,7 +127,7 @@ Legend: ✅ shipped · 🟡 partial · ❌ missing · Priority **P0** (foundatio
 | Capability | Status | Priority |
 |---|---|---|
 | Hint bar, Help-mode tooltips on every control, F1 guide, 3 demo songs, AI co-producer with project editing | ✅ | — |
-| Playhead everywhere it matters (rack ✅, playlist ✅, piano roll ❌ — add a moving line) | 🟡 | P1 |
+| Playhead everywhere it matters (rack ✅, playlist ✅, piano roll ✅) | ✅ | shipped |
 | First-run interactive tour (spotlight: "click here → press space") | ❌ | P2 |
 | AI awareness of new features as they land (automation, sends) — keep the action schema in sync | 🟡 | ongoing |
 
@@ -145,6 +145,9 @@ Legend: ✅ shipped · 🟡 partial · ❌ missing · Priority **P0** (foundatio
 8. **Recording starts cold and lands late** — no count-in, no latency compensation. (Pillar 4)
 9. **No sends** — can't share one reverb across channels; no sidechain pump. (Pillar 7)
 10. **Sounds aren't shapeable** — no ADSR/filter per channel; presets only. (Pillar 1)
+
+## Milestone B — largely SHIPPED ✅ (2026-07-06)
+Send buses, FX presets, Web MIDI, scale/chords, piano playhead, compressed export, audio count-in + latency fix, clip LED, chooser modals. Remaining B items: per-channel ADSR shaping, take trim editor, project browser, playlist track mute/solo, markers, quantize command, loop overdub polish.
 
 ## Milestone A — SHIPPED ✅ (2026-07-06)
 

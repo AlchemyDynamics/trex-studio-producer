@@ -320,5 +320,5 @@ const Effects = (() => {
     return paramDef.min + n * (paramDef.max - paramDef.min);
   }
 
-  return { defs, byId, createChain, norm, denorm };
+  return { defs, byId, createChain, norm, denorm, makeImpulse };
 })();
