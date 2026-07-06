@@ -209,18 +209,30 @@ const UIRack = (() => {
   }
 
   function channelMenu(channel) {
-    const track = prompt(
-      `Channel options for "${channel.name}"\n\nMixer insert (1-8, current ${channel.mixerTrack}).\nEnter a number, or "p" + semitones to pitch (e.g. p-12):`,
-      String(channel.mixerTrack));
-    if (track == null) return;
-    if (/^p/i.test(track)) {
-      const semi = parseInt(track.slice(1), 10);
-      if (!isNaN(semi)) channel.pitch = Math.max(-24, Math.min(24, semi));
-    } else {
-      const t = parseInt(track, 10);
-      if (t >= 1 && t <= 8) channel.mixerTrack = t;
+    const items = [{ heading: 'Route "' + channel.name + '" to mixer insert' }];
+    for (let t = 1; t <= 8; t++) {
+      items.push({
+        label: (channel.mixerTrack === t ? '● ' : '') + State.project.mixer[t].name,
+        desc: channel.mixerTrack === t ? 'current' : undefined,
+        color: '#5aa2ff', track: t,
+      });
     }
-    render();
+    items.push({ heading: 'Tuning' });
+    items.push({ label: '♯ Pitch up an octave', desc: 'Current: ' + (channel.pitch || 0) + ' semitones', color: '#8ae8e8', pitch: 12 });
+    items.push({ label: '♭ Pitch down an octave', desc: 'Current: ' + (channel.pitch || 0) + ' semitones', color: '#8ae8e8', pitch: -12 });
+    items.push({ label: '♮ Reset pitch', color: '#8ae8e8', pitch: 0 });
+    App.choose({
+      title: channel.name + ' — options',
+      items,
+      onPick: (i, it) => {
+        State.snapshot();
+        if (it.track) channel.mixerTrack = it.track;
+        else if (it.pitch === 0) channel.pitch = 0;
+        else if (it.pitch) channel.pitch = Math.max(-24, Math.min(24, (channel.pitch || 0) + it.pitch));
+        render();
+        Sequencer.preview(channel);
+      },
+    });
   }
 
   function renderPatternControls() {

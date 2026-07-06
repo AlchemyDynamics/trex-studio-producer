@@ -391,6 +391,24 @@ body.help-mode [data-hint] { outline: 1px dashed rgba(53, 208, 160, 0.35); outli
 }
 .modal .close-x { float: right; }
 
+/* chooser modal */
+.modal.chooser { padding: 16px; max-width: 460px; }
+.chooser-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.chooser-head h2 { margin: 0; }
+.chooser-list { max-height: 60vh; overflow-y: auto; }
+.chooser-group {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim);
+  padding: 10px 4px 4px;
+}
+.chooser-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border-radius: 6px; cursor: pointer; border: 1px solid transparent;
+}
+.chooser-item:hover { background: var(--bg-raised); border-color: var(--border-lit); }
+.chooser-item .swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+.chooser-item .nm { font-size: 13px; color: var(--text-bright); }
+.chooser-item .ds { font-size: 11px; color: var(--text-dim); line-height: 1.35; }
+
 /* scrollbars */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: var(--bg-inset); }

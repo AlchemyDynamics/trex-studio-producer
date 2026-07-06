@@ -440,17 +440,20 @@ const UIPiano = (() => {
     document.getElementById('piano-channel').onchange = (e) => { channelId = e.target.value; render(); };
     // "＋ Track": new instrument channel in the rack, selected here immediately
     document.getElementById('piano-addtrack').onclick = () => {
-      const melodic = Instruments.list.filter(i => i.type === 'melodic');
-      const listing = melodic.map((i, n) => `${n + 1}. ${i.name}`).join('\n');
-      const pick = prompt('New melody track — which instrument?\n\n' + listing + '\n\nEnter a number:');
-      const idx = parseInt(pick, 10) - 1;
-      if (idx < 0 || idx >= melodic.length || isNaN(idx)) return;
-      State.snapshot();
-      const ch = State.newChannel(melodic[idx].id, (State.project.channels.length % 8) + 1);
-      State.project.channels.push(ch);
-      UIRack.render();
-      setChannel(ch.id);
-      App.toast('✔ ' + ch.name + ' added to the Channel Rack — draw its melody here');
+      App.choose({
+        title: 'New melody track',
+        items: Instruments.list.filter(i => i.type === 'melodic')
+          .map(i => ({ label: i.name, desc: i.desc, color: i.color, instId: i.id })),
+        onPick: (idx, it) => {
+          State.snapshot();
+          const ch = State.newChannel(it.instId, (State.project.channels.length % 8) + 1);
+          State.project.channels.push(ch);
+          UIRack.render();
+          setChannel(ch.id);
+          Sequencer.previewInstrument(it.instId, 60);
+          App.toast('✔ ' + ch.name + ' added to the Channel Rack — draw its melody here');
+        },
+      });
     };
     // Keys sound selector: Grand Piano default, all melodic instruments, or follow-channel
     const ks = document.getElementById('piano-keys');

@@ -38,6 +38,70 @@ const App = (() => {
     return el;
   }
 
+  // ---------- clickable chooser modal (replaces type-a-number prompts) ----------
+  function choose({ title, items, onPick }) {
+    const back = document.createElement('div');
+    back.className = 'modal-back open';
+    const modal = document.createElement('div');
+    modal.className = 'modal chooser';
+
+    const head = document.createElement('div');
+    head.className = 'chooser-head';
+    const h = document.createElement('h2');
+    h.textContent = title;
+    const x = document.createElement('button');
+    x.className = 'mini-btn'; x.textContent = '✕ Close';
+    head.appendChild(h); head.appendChild(x);
+    modal.appendChild(head);
+
+    const list = document.createElement('div');
+    list.className = 'chooser-list';
+    items.forEach((it, i) => {
+      if (it.heading) {
+        const g = document.createElement('div');
+        g.className = 'chooser-group';
+        g.textContent = it.heading;
+        list.appendChild(g);
+        return;
+      }
+      const el = document.createElement('div');
+      el.className = 'chooser-item';
+      if (it.color) {
+        const sw = document.createElement('span');
+        sw.className = 'swatch';
+        sw.style.background = it.color;
+        el.appendChild(sw);
+      }
+      const txt = document.createElement('div');
+      txt.className = 'chooser-txt';
+      const nm = document.createElement('div');
+      nm.className = 'nm'; nm.textContent = it.label;
+      txt.appendChild(nm);
+      if (it.desc) {
+        const ds = document.createElement('div');
+        ds.className = 'ds'; ds.textContent = it.desc;
+        txt.appendChild(ds);
+      }
+      el.appendChild(txt);
+      el.onclick = () => { cleanup(); onPick(i, it); };
+      list.appendChild(el);
+    });
+    modal.appendChild(list);
+    back.appendChild(modal);
+    document.body.appendChild(back);
+
+    function cleanup() {
+      back.remove();
+      window.removeEventListener('keydown', esc, true);
+    }
+    function esc(e) {
+      if (e.key === 'Escape') { e.stopPropagation(); cleanup(); }
+    }
+    x.onclick = cleanup;
+    back.addEventListener('click', (e) => { if (e.target === back) cleanup(); });
+    window.addEventListener('keydown', esc, true);
+  }
+
   // ---------- toast ----------
   let toastTimer = null;
   function toast(msg) {
@@ -228,14 +292,26 @@ const App = (() => {
 
   // ---------- instrument picker ----------
   function pickInstrument() {
-    const names = Instruments.list.map((i, n) => `${n + 1}. ${i.name}`).join('\n');
-    const pick = prompt('Add which instrument?\n\n' + names + '\n\nEnter a number:');
-    const idx = parseInt(pick, 10) - 1;
-    if (idx >= 0 && idx < Instruments.list.length) {
-      State.snapshot();
-      State.project.channels.push(State.newChannel(Instruments.list[idx].id, (State.project.channels.length % 8) + 1));
-      UIRack.render();
-    }
+    const items = [];
+    const push = (type, heading) => {
+      items.push({ heading });
+      Instruments.list.filter(i => i.type === type).forEach(i =>
+        items.push({ label: i.name, desc: i.desc, color: i.color, instId: i.id }));
+    };
+    push('drum', 'Drums');
+    push('melodic', 'Instruments');
+    choose({
+      title: 'Add instrument',
+      items,
+      onPick: (i, it) => {
+        State.snapshot();
+        const ch = State.newChannel(it.instId, (State.project.channels.length % 8) + 1);
+        State.project.channels.push(ch);
+        UIRack.render();
+        Sequencer.previewInstrument(it.instId, 60);
+        toast(it.label + ' added to the Channel Rack');
+      },
+    });
   }
 
   // ---------- save / load ----------
@@ -268,25 +344,33 @@ const App = (() => {
   }
 
   function openProject() {
-    const choice = prompt('Open:\n1. Last saved project (browser)\n2. A .trex file from your computer\n\nEnter 1 or 2:');
-    if (choice === '1') {
-      if (State.loadLocal('manual') || State.loadLocal('autosave')) { refreshAll(); toast('Project loaded'); }
-      else toast('No saved project found in this browser');
-    } else if (choice === '2') {
-      const input = document.createElement('input');
-      input.type = 'file'; input.accept = '.trex,.json';
-      input.onchange = () => {
-        const f = input.files[0];
-        if (!f) return;
-        const r = new FileReader();
-        r.onload = () => {
-          try { State.load(r.result); refreshAll(); toast('✔ Loaded ' + f.name); }
-          catch (e) { toast('Not a valid Trex Studio project file'); }
-        };
-        r.readAsText(f);
-      };
-      input.click();
-    }
+    choose({
+      title: 'Open project',
+      items: [
+        { label: 'Last saved project', desc: 'The song most recently saved in this browser.' },
+        { label: 'A .trex file…', desc: 'Open a project file from your computer (recordings included).' },
+      ],
+      onPick: (i) => {
+        if (i === 0) {
+          if (State.loadLocal('manual') || State.loadLocal('autosave')) { refreshAll(); toast('Project loaded'); }
+          else toast('No saved project found in this browser');
+        } else {
+          const input = document.createElement('input');
+          input.type = 'file'; input.accept = '.trex,.json';
+          input.onchange = () => {
+            const f = input.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = () => {
+              try { State.load(r.result); refreshAll(); toast('✔ Loaded ' + f.name); }
+              catch (e) { toast('Not a valid Trex Studio project file'); }
+            };
+            r.readAsText(f);
+          };
+          input.click();
+        }
+      },
+    });
   }
 
   // ---------- audio import (drag-drop or picker) ----------
@@ -507,6 +591,6 @@ const App = (() => {
 
   return {
     makeKnob, toast, download, showView, setPianoChannel, refreshAll,
-    syncTransportButtons, syncModeButtons, updatePosition, pickInstrument,
+    syncTransportButtons, syncModeButtons, updatePosition, pickInstrument, choose,
   };
 })();

@@ -459,14 +459,15 @@ const UIPlaylist = (() => {
         });
       });
     });
-    const listing = options.map((o, i) => `${i + 1}. ${o.label}`).join('\n');
-    const pick = prompt('Automate which control?\n(Tip: you can also right-click any mixer knob or fader)\n\n' + listing + '\n\nEnter a number:');
-    const idx = parseInt(pick, 10) - 1;
-    if (idx >= 0 && idx < options.length) {
-      Automation.createLane(options[idx].target);
-      render();
-      App.toast('Automation lane added — click in the lane to draw the curve');
-    }
+    App.choose({
+      title: '⚡ Automate which control?',
+      items: options.map(o => ({ label: o.label, color: '#b08ae8' })),
+      onPick: (idx) => {
+        Automation.createLane(options[idx].target);
+        render();
+        App.toast('Automation lane added — click in the lane to draw the curve');
+      },
+    });
   }
 
   function init() {
