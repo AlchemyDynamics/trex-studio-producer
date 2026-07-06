@@ -1,5 +1,7 @@
 # Trex Studio Producer — Development Plan
 
+> **Note:** [SPEC.md](SPEC.md) is now the canonical product specification (ten DAW pillars, full gap analysis, prioritized milestones). This file documents the v1 architecture and original build.
+
 ## Vision
 A complete, legal, browser-based music production studio inspired by FL Studio's pattern-based workflow — built for a 14-year-old to learn real music production, with professional features under a friendly, self-teaching UI. Static HTML/CSS/JS, no build step, no install, deployed on GitHub Pages.
 
