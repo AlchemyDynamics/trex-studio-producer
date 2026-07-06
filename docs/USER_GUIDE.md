@@ -50,7 +50,7 @@ A song = patterns arranged over time.
 
 ## 5. Mixing — Mixer (F9)
 
-Mixing = making everything fit together.
+Mixing = making everything fit together. The mixer opens in its **own floating window** — drag the title bar to move it, drag the bottom-right corner to resize it, and press **F9** (or ✕) to hide it. That way you can keep the Playlist or your recordings visible behind it while you mix.
 
 - Every channel is routed to a mixer **insert** (right-click a channel name in the rack to change which one).
 - **Faders** set loudness. Start with the kick loudest; fit everything else around it.
@@ -73,6 +73,7 @@ Mixing = making everything fit together.
 
 ## 7. Saving and exporting
 
+- **✚ New** saves your current song (browser + `.trex` download) and opens a fresh blank project.
 - The app **autosaves** to your browser every 15 seconds.
 - **💾 Save** also downloads a `.trex` file — back it up or share it with friends (they open it with **📂 Open**).
 - **⬇ WAV** renders your entire song to a high-quality WAV file you can share, upload, or put on your phone.

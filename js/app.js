@@ -58,14 +58,48 @@ const App = (() => {
   // ---------- views ----------
   function showView(name) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view-tab[data-view]').forEach(t => t.classList.remove('active'));
     const view = document.getElementById('view-' + name);
     const tab = document.querySelector(`.view-tab[data-view="${name}"]`);
     if (view) view.classList.add('active');
     if (tab) tab.classList.add('active');
-    if (name === 'mixer') UIMixer.render();
     if (name === 'piano') UIPiano.render();
     if (name === 'playlist') UIPlaylist.render();
+  }
+
+  // ---------- mixer floating window ----------
+  function mixerOpen() {
+    return document.getElementById('mixer-window').classList.contains('open');
+  }
+  function toggleMixer(open) {
+    const win = document.getElementById('mixer-window');
+    const willOpen = open != null ? open : !win.classList.contains('open');
+    win.classList.toggle('open', willOpen);
+    document.getElementById('tab-mixer').classList.toggle('active', willOpen);
+    if (willOpen) UIMixer.render();
+  }
+  function initMixerWindow() {
+    const win = document.getElementById('mixer-window');
+    const bar = document.getElementById('mixer-titlebar');
+    let dragging = false, offX = 0, offY = 0;
+    bar.addEventListener('mousedown', (e) => {
+      if (e.target.closest('button')) return;
+      dragging = true;
+      const r = win.getBoundingClientRect();
+      offX = e.clientX - r.left;
+      offY = e.clientY - r.top;
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const x = Math.max(0, Math.min(innerWidth - 120, e.clientX - offX));
+      const y = Math.max(0, Math.min(innerHeight - 60, e.clientY - offY));
+      win.style.left = x + 'px';
+      win.style.top = y + 'px';
+    });
+    window.addEventListener('mouseup', () => { dragging = false; });
+    document.getElementById('mixer-close').onclick = () => toggleMixer(false);
+    document.getElementById('tab-mixer').onclick = () => toggleMixer();
   }
 
   function setPianoChannel(id) { UIPiano.setChannel(id); }
@@ -210,6 +244,25 @@ const App = (() => {
     toast('✔ Saved in browser + downloaded .trex file');
   }
 
+  function newProject() {
+    if (!confirm('Start a new project?\n\nYour current song will be saved first (in this browser + downloaded as a .trex file).')) return;
+    // save what's there now
+    if (State.project.name === 'Untitled') {
+      State.project.name = prompt('Name your current song before we file it away:', 'My Song') || 'My Song';
+    }
+    const savedName = State.project.name;
+    State.saveLocal('manual');
+    download(new Blob([State.serialize()], { type: 'application/json' }),
+      savedName.replace(/[^a-z0-9-_ ]/gi, '') + '.trex');
+    // fresh start
+    Engine.stop();
+    State.project = State.blank();
+    State.saveLocal('autosave');
+    refreshAll();
+    showView('rack');
+    toast('✔ "' + savedName + '" saved — fresh project ready. Make some noise!');
+  }
+
   function openProject() {
     const choice = prompt('Open:\n1. Last saved project (browser)\n2. A .trex file from your computer\n\nEnter 1 or 2:');
     if (choice === '1') {
@@ -258,7 +311,7 @@ const App = (() => {
       case 'F6': e.preventDefault(); showView('rack'); return;
       case 'F7': e.preventDefault(); showView('piano'); return;
       case 'F8': e.preventDefault(); showView('record'); return;
-      case 'F9': e.preventDefault(); showView('mixer'); return;
+      case 'F9': e.preventDefault(); toggleMixer(); return;
       case 'Escape':
         document.getElementById('guide-back').classList.remove('open');
         AIAssist.toggle(false);
@@ -290,7 +343,7 @@ const App = (() => {
       }
       if (Engine.transport.playing) updatePosition();
       document.getElementById('master-fill').style.width = Math.min(100, Engine.masterLevel() * 110) + '%';
-      if (document.getElementById('view-mixer').classList.contains('active')) UIMixer.paintMeters();
+      if (mixerOpen()) UIMixer.paintMeters();
       Recorder.paintMonitor();
     }
     requestAnimationFrame(frame);
@@ -352,12 +405,14 @@ const App = (() => {
       v => { if (Engine.master) Engine.master.gain.value = Math.max(0, Math.min(1.25, v / 100)); },
       v => Math.round(v), 0.6);
 
-    // tabs
-    document.querySelectorAll('.view-tab').forEach(tab => {
+    // tabs (the Mixer tab toggles its floating window instead)
+    document.querySelectorAll('.view-tab[data-view]').forEach(tab => {
       tab.onclick = () => showView(tab.dataset.view);
     });
+    initMixerWindow();
 
     // toolbar buttons
+    document.getElementById('btn-new').onclick = newProject;
     document.getElementById('btn-save').onclick = saveProject;
     document.getElementById('btn-open').onclick = openProject;
     document.getElementById('guide-close').onclick = () => document.getElementById('guide-back').classList.remove('open');

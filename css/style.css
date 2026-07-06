@@ -206,7 +206,7 @@ select, input[type="text"] {
 .icon-btn:hover { background: var(--bg-raised); color: var(--text-bright); }
 
 /* ---------- Piano Roll ---------- */
-#view-piano { display: flex; flex-direction: column; }
+#view-piano { flex-direction: column; }
 #view-piano.active { display: flex; }
 .piano-toolbar {
   display: flex; align-items: center; gap: 10px; padding: 10px 14px; flex-shrink: 0;
@@ -216,7 +216,7 @@ select, input[type="text"] {
 #piano-canvas { display: block; cursor: crosshair; }
 
 /* ---------- Playlist ---------- */
-#view-playlist { display: flex; flex-direction: column; }
+#view-playlist { flex-direction: column; }
 #view-playlist.active { display: flex; }
 .playlist-toolbar {
   display: flex; align-items: center; gap: 10px; padding: 10px 14px; flex-shrink: 0;
@@ -225,9 +225,29 @@ select, input[type="text"] {
 #playlist-scroll { flex: 1; overflow: auto; position: relative; background: var(--bg-inset); }
 #playlist-canvas { display: block; cursor: pointer; }
 
-/* ---------- Mixer ---------- */
-#view-mixer { padding: 14px; display: flex; gap: 14px; align-items: stretch; }
-#view-mixer.active { display: flex; }
+/* ---------- Mixer (floating window, movable + resizable) ---------- */
+#mixer-window {
+  position: fixed; z-index: 400;
+  top: 90px; left: 240px; width: min(1060px, calc(100vw - 260px)); height: 460px;
+  min-width: 420px; min-height: 320px;
+  background: var(--bg-panel); border: 1px solid var(--border-lit); border-radius: 8px;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.65);
+  display: none; flex-direction: column;
+  resize: both; overflow: hidden;
+}
+#mixer-window.open { display: flex; }
+#mixer-titlebar {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  background: linear-gradient(#34343e, #26262e); border-bottom: 1px solid var(--bg-inset);
+  padding: 7px 12px; cursor: move; border-radius: 8px 8px 0 0; user-select: none;
+}
+#mixer-titlebar .t { font-weight: 700; font-size: 12px; color: var(--accent); flex: 1; }
+#mixer-titlebar .drag-hint { font-size: 10px; color: var(--text-dim); }
+#mixer-body { flex: 1; display: flex; gap: 14px; align-items: stretch; padding: 12px; overflow: auto; min-height: 0; }
+#mixer-window::after {
+  content: '◢'; position: absolute; right: 3px; bottom: 1px;
+  font-size: 10px; color: var(--text-dim); pointer-events: none;
+}
 #mixer-strips { display: flex; gap: 8px; align-items: stretch; }
 .strip {
   width: 84px; background: var(--bg-panel); border: 1px solid var(--bg-inset); border-radius: var(--radius);
