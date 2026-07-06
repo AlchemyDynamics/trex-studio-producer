@@ -129,7 +129,19 @@ const UIRack = (() => {
       if (i === State.project.activePattern) o.selected = true;
       sel.appendChild(o);
     });
-    document.getElementById('pattern-len').value = String(State.activePattern().length);
+    // length select: 1–8 bars, always including the pattern's current length
+    const lenSel = document.getElementById('pattern-len');
+    lenSel.innerHTML = '';
+    const curLen = State.activePattern().length;
+    const lengths = new Set([16, 32, 48, 64, 80, 96, 112, 128, curLen]);
+    [...lengths].sort((a, b) => a - b).forEach(len => {
+      const o = document.createElement('option');
+      o.value = len;
+      const bars = len / 16;
+      o.textContent = (bars === Math.round(bars) ? bars : bars.toFixed(2)) + (bars === 1 ? ' bar' : ' bars') + ' (' + len + ')';
+      if (len === curLen) o.selected = true;
+      lenSel.appendChild(o);
+    });
 
     // playlist paint selector shares the pattern list
     const ps = document.getElementById('playlist-pattern');
@@ -182,6 +194,21 @@ const UIRack = (() => {
         pattern.steps[chId] = Array.from({ length: pattern.length }, (_, i) => old[i % old.length] ? { ...old[i % old.length] } : { on: false, vel: 1 });
       });
       render();
+    };
+    document.getElementById('pattern-addbar').onclick = () => {
+      const pattern = State.activePattern();
+      if (pattern.length >= 128) { App.toast('Pattern is at its 8-bar max — clone it and keep building in the Playlist!'); return; }
+      State.snapshot();
+      pattern.length += 16;
+      // extend existing step rows in place, new bar starts empty
+      Object.keys(pattern.steps).forEach(chId => {
+        const old = pattern.steps[chId] || [];
+        pattern.steps[chId] = Array.from({ length: pattern.length },
+          (_, i) => old[i] || { on: false, vel: 1 });
+      });
+      render();
+      UIPiano.render();
+      App.toast('＋ 1 bar — pattern is now ' + (pattern.length / 16) + ' bars');
     };
     document.getElementById('rack-add-channel').onclick = () => App.pickInstrument();
   }

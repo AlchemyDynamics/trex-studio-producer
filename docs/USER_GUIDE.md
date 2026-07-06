@@ -42,7 +42,7 @@ The **Browser** on the left lists every sound:
 
 A song = patterns arranged over time.
 
-1. In the Channel Rack, click **⧉ Clone** to make variations of your pattern (e.g. a version without the melody for the intro).
+1. In the Channel Rack, click **⧉ Clone** to make variations of your pattern (e.g. a version without the melody for the intro). Click **＋ Bar** to make a pattern longer — each press adds one bar (16 steps / 4 quarter notes) so a beat can grow into a longer phrase (up to 8 bars).
 2. Open the **Playlist** and switch the transport to **SONG** mode.
 3. Pick a pattern in "PAINT WITH", then **click** empty timeline cells to place it. Click a clip to remove it.
 4. Classic structure: **Intro (drums only) → Build (add bass) → Drop/Chorus (everything) → Break (quiet) → Drop → Outro.**

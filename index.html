@@ -101,11 +101,8 @@
               <select id="pattern-select" data-hint="Pattern selector|Songs are built from patterns (loops). Switch between them here — each holds its own beat and melodies."></select>
               <button class="mini-btn" id="pattern-add" data-hint="New pattern|Creates a fresh empty pattern. Build variations: intro beat, main beat, drop...">＋ New</button>
               <button class="mini-btn" id="pattern-clone" data-hint="Clone pattern|Copies the current pattern so you can make a variation without losing the original.">⧉ Clone</button>
-              <select id="pattern-len" data-hint="Pattern length|How many 16th-note steps this pattern has. 16 = 1 bar, 32 = 2 bars, 64 = 4 bars.">
-                <option value="16">16 steps</option>
-                <option value="32">32 steps</option>
-                <option value="64">64 steps</option>
-              </select>
+              <select id="pattern-len" data-hint="Pattern length|How many bars this pattern has. 1 bar = 16 steps (16th notes). Shrinking hides the extra steps but keeps them saved."></select>
+              <button class="mini-btn" id="pattern-addbar" data-hint="Add a bar|Makes this pattern one bar longer (adds 16 steps = 4 quarter notes) so you can keep the beat going. Existing steps and notes stay put.">＋ Bar</button>
             </div>
           </div>
           <div id="rack-rows"></div>
