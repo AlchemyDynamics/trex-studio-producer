@@ -369,6 +369,97 @@ const Instruments = (() => {
     o2.start(time); o2.stop(time + 0.5);
   }
 
+  function harpsichord(ctx, dest, { time, freq = 261.6, velocity = 1, duration = 0.5 }) {
+    // bright double-strung pluck: saw + octave saw, fast decay, no sustain
+    const g = ctx.createGain();
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(Math.min(11000, freq * 20), time);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(600, freq * 3), time + 0.5);
+    g.gain.setValueAtTime(velocity * 0.4, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + Math.max(0.6, Math.min(duration + 0.2, 1.2)));
+    [[1, 0.7, 0], [2, 0.35, 4], [1, 0.5, -3]].forEach(([mult, amp, det]) => {
+      const o = osc(ctx, 'sawtooth', freq * mult, det);
+      const og = ctx.createGain(); og.gain.value = amp;
+      o.connect(og); og.connect(lp);
+      o.start(time); o.stop(time + 1.3);
+    });
+    lp.connect(g); g.connect(dest);
+  }
+
+  function clavinet(ctx, dest, { time, freq = 261.6, velocity = 1, duration = 0.3 }) {
+    // funky percussive bite: saw through a resonant bandpass, very fast decay
+    const o = osc(ctx, 'sawtooth', freq);
+    const o2 = osc(ctx, 'square', freq * 2, 6);
+    const o2g = ctx.createGain(); o2g.gain.value = 0.25;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 2.5;
+    bp.frequency.setValueAtTime(Math.min(9000, freq * 8), time);
+    bp.frequency.exponentialRampToValueAtTime(Math.max(300, freq * 1.5), time + 0.2);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(velocity * 0.8, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + Math.max(0.3, Math.min(duration, 0.6)));
+    o.connect(bp); o2.connect(o2g); o2g.connect(bp); bp.connect(g); g.connect(dest);
+    o.start(time); o.stop(time + 0.7);
+    o2.start(time); o2.stop(time + 0.7);
+  }
+
+  function musicBox(ctx, dest, { time, freq = 523.2, velocity = 1, duration = 0.5 }) {
+    // delicate tine: sine + sparkly inharmonic FM partial, long ring
+    const car = osc(ctx, 'sine', freq * 2); // music boxes speak an octave up
+    const mod = osc(ctx, 'sine', freq * 2 * 3.01);
+    const modG = ctx.createGain();
+    modG.gain.setValueAtTime(freq * 1.2, time);
+    modG.gain.exponentialRampToValueAtTime(0.5, time + 0.6);
+    mod.connect(modG); modG.connect(car.frequency);
+    const spark = osc(ctx, 'sine', freq * 8);
+    const sg = ctx.createGain();
+    sg.gain.setValueAtTime(velocity * 0.08, time);
+    sg.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(velocity * 0.35, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + Math.max(1.4, duration));
+    car.connect(g); spark.connect(sg); sg.connect(dest); g.connect(dest);
+    const stopAt = time + Math.max(1.5, duration) + 0.1;
+    car.start(time); car.stop(stopAt);
+    mod.start(time); mod.stop(stopAt);
+    spark.start(time); spark.stop(time + 0.35);
+  }
+
+  function accordion(ctx, dest, { time, freq = 261.6, velocity = 1, duration = 0.5 }) {
+    // reedy sustained squeeze: detuned squares + saw, bellows vibrato
+    const g = ctx.createGain();
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 4500; lp.Q.value = 0.7;
+    const rel = 0.12;
+    env(ctx, g.gain, time, velocity * 0.28, 0.06, 0.05, 0.9, Math.max(0, duration - 0.05), rel);
+    const oscs = [];
+    [['square', 1, -7], ['square', 1, 7], ['sawtooth', 2, 0]].forEach(([type, mult, det]) => {
+      const o = osc(ctx, type, freq * mult, det);
+      const og = ctx.createGain(); og.gain.value = mult === 2 ? 0.18 : 0.5;
+      o.connect(og); og.connect(lp);
+      o.start(time); o.stop(time + duration + rel + 0.05);
+      oscs.push(o);
+    });
+    const lfo = osc(ctx, 'sine', 5.5);
+    const lfoG = ctx.createGain(); lfoG.gain.value = freq * 0.005;
+    lfo.connect(lfoG);
+    oscs.forEach(o => lfoG.connect(o.frequency));
+    lfo.start(time); lfo.stop(time + duration + rel + 0.05);
+    lp.connect(g); g.connect(dest);
+  }
+
+  function churchOrgan(ctx, dest, { time, freq = 261.6, velocity = 1, duration = 0.5 }) {
+    // big cathedral stack: sub + harmonics with slow swell and gentle detune shimmer
+    const g = ctx.createGain();
+    const rel = 0.35;
+    env(ctx, g.gain, time, velocity * 0.3, 0.09, 0.05, 0.95, Math.max(0, duration - 0.05), rel);
+    [[0.5, 0.5, 0], [1, 0.9, 0], [1, 0.3, 5], [2, 0.5, -3], [3, 0.22, 0], [4, 0.16, 3]].forEach(([mult, amp, det]) => {
+      const o = osc(ctx, 'sine', freq * mult, det);
+      const og = ctx.createGain(); og.gain.value = amp;
+      o.connect(og); og.connect(g);
+      o.start(time); o.stop(time + duration + rel + 0.1);
+    });
+    g.connect(dest);
+  }
+
   function flute(ctx, dest, { time, freq = 523.2, velocity = 1, duration = 0.5 }) {
     const o = osc(ctx, 'sine', freq);
     const o2 = osc(ctx, 'triangle', freq * 2);
@@ -427,6 +518,16 @@ const Instruments = (() => {
       desc: 'Warm Rhodes-style tines — smooth for chords and R&B.' },
     { id: 'organ',     name: 'Organ',         type: 'melodic', color: '#6ab0e8', play: organ,
       desc: 'Drawbar organ that holds as long as you hold the note.' },
+    { id: 'churchOrgan', name: 'Church Organ', type: 'melodic', color: '#6ab0e8', play: churchOrgan,
+      desc: 'Huge cathedral pipe organ — majestic sustained chords.' },
+    { id: 'harpsichord', name: 'Harpsichord', type: 'melodic', color: '#6ab0e8', play: harpsichord,
+      desc: 'Bright plucked baroque keyboard — instant fancy.' },
+    { id: 'clavinet',  name: 'Clavinet',      type: 'melodic', color: '#6ab0e8', play: clavinet,
+      desc: 'Funky percussive keys — think Stevie Wonder "Superstition".' },
+    { id: 'musicBox',  name: 'Music Box',     type: 'melodic', color: '#6ab0e8', play: musicBox,
+      desc: 'Tiny delicate tines that ring like a wind-up music box.' },
+    { id: 'accordion', name: 'Accordion',     type: 'melodic', color: '#6ab0e8', play: accordion,
+      desc: 'Reedy squeezebox with a gentle bellows vibrato.' },
     { id: 'subBass',   name: 'Sub Bass',      type: 'melodic', color: '#e84a8a', play: subBass,
       desc: 'Pure deep bass you feel more than hear. Keep it on low notes.' },
     { id: 'pluckBass', name: 'Pluck Bass',    type: 'melodic', color: '#e84a8a', play: pluckBass,

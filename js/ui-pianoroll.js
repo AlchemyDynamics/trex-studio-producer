@@ -18,6 +18,32 @@ const UIPiano = (() => {
   let stepW = 34;              // px per 16th step
   let drag = null;             // {type:'move'|'resize', note, offsetSteps}
   let hoverNote = null;
+  let keysVoice = 'piano';     // sound for the on-screen keys / typing ('channel' = follow)
+  const pressedKeys = new Set();
+
+  // Which sound should a key/note audition use?
+  // - keys & typing: the Keys voice (or the channel when set to 'Follow channel')
+  // - grid notes: the channel's own sound when it's pitched, else the Keys voice
+  function resolveVoice(preferChannel) {
+    const ch = channel();
+    const inst = ch && Instruments.byId[ch.instrumentId];
+    const pitched = (inst && inst.type === 'melodic') || (ch && (ch.instrumentId.startsWith('smp:') || ch.instrumentId.startsWith('usr:')));
+    if ((keysVoice === 'channel' || preferChannel) && ch && pitched) return { ch };
+    return { instId: keysVoice === 'channel' ? 'piano' : keysVoice };
+  }
+
+  function playKey(key, preferChannel = false, velocity = 0.9) {
+    const v = resolveVoice(preferChannel);
+    if (v.ch) Sequencer.preview(v.ch, key, velocity);
+    else Sequencer.previewInstrument(v.instId, key, velocity);
+    flashKey(key);
+  }
+
+  function flashKey(key) {
+    pressedKeys.add(key);
+    render();
+    setTimeout(() => { pressedKeys.delete(key); render(); }, 180);
+  }
 
   const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const isBlack = k => [1, 3, 6, 8, 10].includes(k % 12);
@@ -79,10 +105,10 @@ const UIPiano = (() => {
     // piano keys gutter
     for (let i = 0; i < NUM_KEYS; i++) {
       const key = TOP_KEY - i;
-      c.fillStyle = isBlack(key) ? '#0c0c10' : '#e8e8ee';
+      c.fillStyle = pressedKeys.has(key) ? '#ff8c2b' : (isBlack(key) ? '#0c0c10' : '#e8e8ee');
       c.fillRect(0, i * KEY_H, KEYS_W - 2, KEY_H - 1);
       if (key % 12 === 0) {
-        c.fillStyle = isBlack(key) ? '#aaa' : '#555';
+        c.fillStyle = pressedKeys.has(key) ? '#17171c' : (isBlack(key) ? '#aaa' : '#555');
         c.font = 'bold 9px sans-serif';
         c.fillText(keyName(key), 4, i * KEY_H + 11);
       }
@@ -108,15 +134,16 @@ const UIPiano = (() => {
 
   function onDown(e) {
     const { x, y } = posFromEvent(e);
-    const ch = channel();
-    if (!ch) return;
 
-    // clicking piano gutter previews the key
+    // clicking piano gutter plays the key with the Keys voice (works even with no channels)
     if (x < KEYS_W) {
       const key = TOP_KEY - Math.floor(y / KEY_H);
-      Sequencer.preview(ch, key);
+      playKey(key);
       return;
     }
+
+    const ch = channel();
+    if (!ch) return;
 
     const pattern = State.activePattern();
     const hit = hitTest(x, y);
@@ -147,7 +174,7 @@ const UIPiano = (() => {
     if (start < 0 || start >= pattern.length || key < BOTTOM_KEY || key > TOP_KEY) return;
     const n = { key, start, len: Math.min(drawLen(), pattern.length - start), vel: 0.9 };
     notes().push(n);
-    Sequencer.preview(ch, key);
+    playKey(key, true); // grid notes audition with the channel's own sound when it's pitched
     drag = { type: 'move', note: n, offsetSteps: 0 };
     render();
   }
@@ -169,7 +196,7 @@ const UIPiano = (() => {
       const prevKey = drag.note.key;
       drag.note.start = Math.max(0, Math.min(pattern.length - drag.note.len, start));
       drag.note.key = Math.max(BOTTOM_KEY, Math.min(TOP_KEY, key));
-      if (drag.note.key !== prevKey) Sequencer.preview(channel(), drag.note.key, 0.5);
+      if (drag.note.key !== prevKey) playKey(drag.note.key, true, 0.5);
     } else {
       const end = Math.max(drag.note.start + 1, Math.round(((x - KEYS_W) / stepW) / snap) * snap);
       drag.note.len = Math.min(end, pattern.length) - drag.note.start;
@@ -201,7 +228,16 @@ const UIPiano = (() => {
       o.value = ch.id; o.textContent = ch.name;
       sel.appendChild(o);
     }
-    if (prev && State.project.channels.some(c => c.id === prev)) sel.value = prev;
+    if (prev && State.project.channels.some(c => c.id === prev)) {
+      sel.value = prev;
+    } else {
+      // default to the first melodic channel so notes always make a tone
+      const melodic = State.project.channels.find(c => {
+        const inst = Instruments.byId[c.instrumentId];
+        return inst && inst.type === 'melodic';
+      });
+      if (melodic) sel.value = melodic.id;
+    }
     channelId = sel.value || null;
   }
 
@@ -214,8 +250,7 @@ const UIPiano = (() => {
     if (k === 'z') { octave = Math.max(2, octave - 1); App.toast('Octave: C' + octave); return true; }
     if (k === 'x') { octave = Math.min(7, octave + 1); App.toast('Octave: C' + octave); return true; }
     if (KEYMAP[k] !== undefined) {
-      const ch = channel() || State.project.channels[0];
-      if (ch) Sequencer.preview(ch, 12 * octave + KEYMAP[k]);
+      playKey(12 * octave + KEYMAP[k]);
       return true;
     }
     return false;
@@ -238,6 +273,20 @@ const UIPiano = (() => {
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     document.getElementById('piano-channel').onchange = (e) => { channelId = e.target.value; render(); };
+    // Keys sound selector: Grand Piano default, all melodic instruments, or follow-channel
+    const ks = document.getElementById('piano-keys');
+    const kOpt = (val, label) => {
+      const o = document.createElement('option');
+      o.value = val; o.textContent = label;
+      ks.appendChild(o);
+    };
+    Instruments.list.filter(i => i.type === 'melodic').forEach(i => kOpt(i.id, i.name));
+    kOpt('channel', '↳ Follow channel');
+    ks.value = 'piano';
+    ks.onchange = (e) => {
+      keysVoice = e.target.value;
+      if (keysVoice !== 'channel') Sequencer.previewInstrument(keysVoice, 60);
+    };
     document.getElementById('piano-clear').onclick = () => {
       const ch = channel();
       if (!ch) return;

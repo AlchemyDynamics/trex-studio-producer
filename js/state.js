@@ -56,6 +56,8 @@ const State = (() => {
         newChannel('clap', 2),
         newChannel('hatClosed', 3),
         newChannel('snare', 2),
+        newChannel('piano', 5),
+        newChannel('subBass', 4),
       ],
       patterns: [newPattern('Pattern 1')],
       activePattern: 0,

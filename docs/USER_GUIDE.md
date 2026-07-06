@@ -31,7 +31,8 @@ The **Browser** on the left lists every sound:
 1. Add a melodic instrument (try **Grand Piano** or **Sub Bass**).
 2. Open the **Piano Roll** and pick that channel at the top.
 3. **Click** the grid to place a note. **Drag** to move it. Drag its **right edge** to stretch it. **Right-click** deletes.
-4. Play notes live with your computer keyboard: **A S D F G H J K** are white keys, **W E T Y U** are the black keys, **Z / X** move octaves.
+4. Play notes live: click the **piano keys** on the left, or use your computer keyboard — **A S D F G H J K** are white keys, **W E T Y U** are the black keys, **Z / X** move octaves.
+5. The **🎹 KEYS** dropdown picks the sound the keys play — Grand Piano by default, or Electric Piano, Organ, Church Organ, Harpsichord, Clavinet, Music Box, Accordion and every other melodic instrument. Choose "↳ Follow channel" to hear the selected channel's own sound instead. (Notes you place in the grid always play their channel's instrument during playback.)
 
 **Cheat codes for sounding good:**
 - Stay "in key": start with only the white-key notes A, C, D, E, G (A minor pentatonic — everything sounds good together).

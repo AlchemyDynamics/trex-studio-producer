@@ -323,12 +323,15 @@ const App = (() => {
       return;
     }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveProject(); return; }
+    // with the Piano Roll open, musical typing wins over single-letter shortcuts (L is a piano key too)
+    const pianoActive = document.getElementById('view-piano').classList.contains('active');
+    if (pianoActive && !e.ctrlKey && !e.altKey && !e.metaKey && UIPiano.handleKey(e)) return;
     if (e.key.toLowerCase() === 'l' && !e.ctrlKey) {
       const m = Engine.transport.mode === 'pattern' ? 'song' : 'pattern';
       Engine.setMode(m); syncModeButtons(); syncTransportButtons();
       return;
     }
-    // musical typing (A-K etc.)
+    // musical typing from any other view (A-K etc.)
     if (!e.ctrlKey && !e.altKey && !e.metaKey) UIPiano.handleKey(e);
   }
 

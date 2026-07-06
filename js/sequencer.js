@@ -117,10 +117,10 @@ const Sequencer = (() => {
     playChannelNote(channel, { time: Engine.ctx.currentTime + 0.005, key, velocity, durationSteps: 4 });
   }
 
-  function previewInstrument(instrumentId, key = 60) {
+  function previewInstrument(instrumentId, key = 60, velocity = 0.9) {
     Engine.ensureContext();
     const fake = { instrumentId, volume: 0.8, pan: 0, pitch: 0, mute: false, mixerTrack: 0 };
-    playChannelNote(fake, { time: Engine.ctx.currentTime + 0.005, key, velocity: 0.9, durationSteps: 4 });
+    playChannelNote(fake, { time: Engine.ctx.currentTime + 0.005, key, velocity, durationSteps: 4 });
   }
 
   // ---- wire into the engine ----
