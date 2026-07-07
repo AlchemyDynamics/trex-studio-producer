@@ -178,6 +178,7 @@ const Exporter = (() => {
     const buffer = await render();
     App.toast('Encoding compressed audio — takes as long as the song plays…');
     const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx2.state === 'suspended') { try { await ctx2.resume(); } catch (e) {} } // a suspended clock would never fire src.onended
     const src = ctx2.createBufferSource();
     src.buffer = buffer;
     const msd = ctx2.createMediaStreamDestination();

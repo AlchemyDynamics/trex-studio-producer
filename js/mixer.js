@@ -30,9 +30,28 @@ const Mixer = (() => {
 
   function build() {
     const ctx = Engine.ensureContext();
-    // tear down old strips
-    strips.forEach(s => { try { s.output.disconnect(); } catch (e) {} });
+    // tear down old strips (including FX chains + send taps, so delay
+    // feedback loops from the previous graph don't keep running forever)
+    strips.forEach(s => {
+      try { s.output.disconnect(); } catch (e) {}
+      if (s.chain) {
+        try { s.chain.input.disconnect(); } catch (e) {}
+        try { s.chain.output.disconnect(); } catch (e) {}
+        s.chain.slots.forEach(slot => {
+          try { slot.fx.output.disconnect(); } catch (e) {}
+          if (slot.fx.dispose) { try { slot.fx.dispose(); } catch (e) {} }
+        });
+      }
+      if (s.sendRev) { try { s.sendRev.disconnect(); } catch (e) {} }
+      if (s.sendDel) { try { s.sendDel.disconnect(); } catch (e) {} }
+    });
     strips = [];
+    // tear down old shared buses (the delay bus is a self-sustaining feedback loop)
+    if (buses) {
+      try { buses.reverbIn.disconnect(); } catch (e) {}
+      try { buses.delayIn.disconnect(); } catch (e) {}
+      buses = null;
+    }
 
     const cfg = State.project.mixer;
 

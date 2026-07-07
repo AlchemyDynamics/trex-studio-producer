@@ -128,7 +128,6 @@ const UIMixer = (() => {
   }
 
   function attachFader(track, thumb, t, i) {
-    let dragging = false;
     const set = (clientY) => {
       const r = track.getBoundingClientRect();
       const h = r.height - thumb.offsetHeight;
@@ -139,9 +138,18 @@ const UIMixer = (() => {
       Mixer.applyTrack(i);
       Hints.showValue(`${t.name} volume: ${Math.round(v * 100)}%`);
     };
-    track.addEventListener('mousedown', (e) => { dragging = true; set(e.clientY); e.preventDefault(); });
-    window.addEventListener('mousemove', (e) => { if (dragging) set(e.clientY); });
-    window.addEventListener('mouseup', () => { dragging = false; });
+    // window listeners live only for the drag — strips are rebuilt on every
+    // render, so permanent window listeners would accumulate.
+    const onDragMove = (e) => set(e.clientY);
+    const onDragUp = () => {
+      window.removeEventListener('mousemove', onDragMove);
+      window.removeEventListener('mouseup', onDragUp);
+    };
+    track.addEventListener('mousedown', (e) => {
+      set(e.clientY); e.preventDefault();
+      window.addEventListener('mousemove', onDragMove);
+      window.addEventListener('mouseup', onDragUp);
+    });
     track.addEventListener('dblclick', () => { t.volume = 0.8; Mixer.applyTrack(i); positionThumb(thumb, track, 0.8); });
   }
 

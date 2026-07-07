@@ -75,6 +75,8 @@ const Effects = (() => {
             if (p === 'feedback') fb.gain.value = v;
             if (p === 'mix') { io.wet.gain.value = v; io.dry.gain.value = 1 - v * 0.5; }
           },
+          // break the delay→hp→fb→delay feedback cycle so the nodes can be GC'd
+          dispose() { try { delay.disconnect(); } catch (e) {} },
         };
       },
     },
@@ -276,7 +278,12 @@ const Effects = (() => {
       },
       remove(index) {
         const [s] = slots.splice(index, 1);
-        if (s && s.fx.dispose) s.fx.dispose();
+        if (s) {
+          // rewire() only touches remaining slots — explicitly disconnect the
+          // removed effect's output so it stops feeding the chain and can be GC'd
+          try { s.fx.output.disconnect(); } catch (e) {}
+          if (s.fx.dispose) s.fx.dispose();
+        }
         rewire();
       },
       setParam(index, param, value) {

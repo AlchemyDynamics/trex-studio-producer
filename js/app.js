@@ -16,18 +16,24 @@ const App = (() => {
     let v = value;
     const paint = () => el.style.setProperty('--knob-deg', (30 + v * 300) + 'deg');
     paint();
-    let dragging = false, startY = 0, startV = 0;
-    el.addEventListener('mousedown', (e) => {
-      dragging = true; startY = e.clientY; startV = v; e.preventDefault(); e.stopPropagation();
-    });
-    window.addEventListener('mousemove', (e) => {
-      if (!dragging) return;
+    // Drag listeners are attached to window only for the duration of a drag —
+    // knobs are recreated on every render, so permanent window listeners leak.
+    let startY = 0, startV = 0;
+    const onDragMove = (e) => {
       v = Math.max(0, Math.min(1, startV + (startY - e.clientY) / 150));
       paint();
       onChange(v);
       if (format) Hints.showValue((hint ? hint.split('|')[0] : 'Value') + ': ' + format(v));
+    };
+    const onDragUp = () => {
+      window.removeEventListener('mousemove', onDragMove);
+      window.removeEventListener('mouseup', onDragUp);
+    };
+    el.addEventListener('mousedown', (e) => {
+      startY = e.clientY; startV = v; e.preventDefault(); e.stopPropagation();
+      window.addEventListener('mousemove', onDragMove);
+      window.addEventListener('mouseup', onDragUp);
     });
-    window.addEventListener('mouseup', () => { dragging = false; });
     el.addEventListener('dblclick', () => { v = 0.5; paint(); onChange(v); });
     el.addEventListener('wheel', (e) => {
       e.preventDefault();
@@ -376,6 +382,7 @@ const App = (() => {
   // ---------- audio import (drag-drop or picker) ----------
   async function importAudioFiles(files) {
     Engine.ensureContext();
+    State.snapshot(); // snapshot BEFORE mutating so undo can revert the import
     let added = 0;
     for (const f of files) {
       if (!/\.(wav|mp3|ogg|webm|m4a|flac|aac)$/i.test(f.name) && !f.type.startsWith('audio/')) continue;
@@ -392,7 +399,6 @@ const App = (() => {
       }
     }
     if (added) {
-      State.snapshot();
       UIRack.render();
       toast('✔ ' + added + ' sample' + (added > 1 ? 's' : '') + ' added to the Channel Rack');
     }

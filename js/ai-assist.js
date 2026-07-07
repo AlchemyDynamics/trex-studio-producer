@@ -58,7 +58,23 @@ const AIAssist = (() => {
             patternName: { type: 'string' },
             patternLength: { type: 'integer', enum: [16, 32, 64] },
             effectId: { type: 'string', enum: ['delay', 'distortion', 'filter', 'reverb', 'eq3', 'compressor', 'chorus'] },
-            values: { type: 'object', additionalProperties: true, description: 'Effect parameter values, e.g. {"mix":0.3}' },
+            // structured outputs only allow additionalProperties:false, so the
+            // effect params are enumerated (union of every effect's param ids)
+            values: {
+              type: 'object',
+              additionalProperties: false,
+              description: 'Effect parameter values, e.g. {"mix":0.3}. Include only the params you want to set.',
+              properties: {
+                time: { type: 'number' }, feedback: { type: 'number' }, mix: { type: 'number' },
+                drive: { type: 'number' }, tone: { type: 'number' }, level: { type: 'number' },
+                type: { type: 'string', enum: ['lowpass', 'highpass', 'bandpass'] },
+                cutoff: { type: 'number' }, q: { type: 'number' }, size: { type: 'number' },
+                low: { type: 'number' }, mid: { type: 'number' }, high: { type: 'number' },
+                threshold: { type: 'number' }, ratio: { type: 'number' },
+                attack: { type: 'number' }, release: { type: 'number' },
+                rate: { type: 'number' }, depth: { type: 'number' },
+              },
+            },
             volume: { type: 'number', description: '0-1' },
             pan: { type: 'number', description: '-1 to 1' },
             pitch: { type: 'integer', description: 'semitone offset -24..24' },
